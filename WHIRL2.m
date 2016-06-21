@@ -31,18 +31,24 @@ iDirTxt = uicontrol('Parent',pR,'Style','edit','String','','FontSize',12,...
 % Rotation and images settings for analysis
 degreeTxt = uicontrol('Parent',pR,'Style','text','String','Degrees Per Step:',...
     'HorizontalAlignment','Right','FontSize',12,'Position',[20 190 105 20]);
-degreeEdit = uicontrol('Parent',pR,'Style','edit','String','',...
+degreeEdit = uicontrol('Parent',pR,'Style','edit','String','5',...
     'FontSize',12,'Position',[130 190 40 20],'Callback',{@degreeEdit_callback});
 imagesTxt = uicontrol('Parent',pR,'Style','text','String','Images Acquired:',...
     'HorizontalAlignment','Right','FontSize',12,'Position',[20 160 105 20]);
-imagesEdit = uicontrol('Parent',pR,'Style','edit','String','',...
+imagesEdit = uicontrol('Parent',pR,'Style','edit','String','72',...
     'FontSize',12,'Position',[130 160 40 20],'Callback',{@imagesEdit_callback});
 
 % Threshold value
 threshTxt = uicontrol('Parent',pR,'Style','text','String','Threshold Value:',...
-    'FontSize',12,'HorizontalAlignment','Right','Position',[20 130 105 20]);
+    'FontSize',12,'HorizontalAlignment','Right','Position',[315 70 105 20]);
 threshEdit = uicontrol('Parent',pR,'Style','edit','String','0.350',...
-    'FontSize',12,'Position',[130 130 40 20],'Callback',{@threshEdit_callback});
+    'FontSize',12,'Position',[425 70 40 20],'Callback',{@threshEdit_callback});
+threshApply = uicontrol('Parent',pR,'Style','pushbutton','String','Apply',...
+    'FontSize',12,'Position',[470 70 40 20],'Callback',{@threshApply_callback});
+threshAdd = uicontrol('Parent',pR,'Style','pushbutton','String','Add',...
+    'FontSize',12,'Position',[425 40 40 20],'Callback',{@threshAdd_callback});
+threshMinus = uicontrol('Parent',pR,'Style','pushbutton','String',...
+    'Minus','FontSize',12,'Position',[470 40 40 20],'Callback',{@threshMinus_callback});
 
 % Load background images
 loadBkgdButton = uicontrol('Parent',pR,'Style','pushbutton','String',...
@@ -51,16 +57,16 @@ loadBkgdButton = uicontrol('Parent',pR,'Style','pushbutton','String',...
 
 % Above or below threshold designation
 abThreshPop = uicontrol('Parent',pR,'Style','popupmenu','String',...
-    {'---','Above','Below'},'Position',[65 100 112 20],'Callback',...
+    {'Above','Below'},'Position',[65 100 112 20],'Callback',...
     {@abThreshPop_callback});
 
-% Use old thresholds or set new thresholds
-useThreshButton = uicontrol('Parent',pR,'Style','pushbutton','String',...
-    'Use Old','FontSize',12,'Position',[25 40 70 20],'Callback',...
-    {@useThreshButton_callback});
-setThreshButton = uicontrol('Parent',pR,'Style','pushbutton','String',...
-    'Set New','FontSize',12,'Position',[100 40 70 20],'Callback',...
-    {@setThreshButton_callback});
+% Switch between images
+imNumEdit = uicontrol('Parent',pR,'Style','edit','FontSize',12,...
+    'String','1','Position',[225 70 40 20],'Callback',{@imNumEdit_callback});
+imNumInc = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
+    'String',char(8594),'Position',[270 70 40 20],'Callback',{@imNumInc_callback});
+imNumDec = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
+    'String',char(8592),'Position',[180 70 40 20],'Callback',{@imNumDec_callback});
 
 % Message center text box
 msgCenter = uicontrol('Parent',pR,'Style','text','String','','FontSize',...
@@ -68,24 +74,29 @@ msgCenter = uicontrol('Parent',pR,'Style','text','String','','FontSize',...
 
 % Allow all GUI structures to be scaled when window is dragged
 set([pR,silhView,hDirButton,hDirTxt,degreeTxt,degreeEdit,imagesTxt,imagesEdit,...
-    threshTxt,threshEdit,loadBkgdButton,msgCenter,abThreshPop,useThreshButton,...
-    setThreshButton,iDirButton,iDirTxt],'Units','normalized')
+    threshTxt,threshEdit,loadBkgdButton,msgCenter,abThreshPop,iDirButton,...
+    iDirTxt,imNumEdit,imNumInc,imNumDec,threshApply,threshAdd,threshMinus],...
+    'Units','normalized')
 
 % Center GUI on screen
 movegui(pR,'center')
-set(pR,'Visible','on')
+set(pR,'MenuBar','none','Visible','on')
 
 %% Create handles
 handles.hdir = [];
 handles.bdir = [];
-handles.dtheta = [];
-handles.n_images = [];
+handles.dtheta = str2double(get(degreeEdit,'String'));
+handles.n_images = str2double(get(imagesEdit,'String'));
 handles.oldDir = pwd;
 handles.fileList = [];
 handles.sfilename = [];
 handles.ndigits = [];
-handles.def_thresh = [];
-handles.aabb = [];
+handles.def_thresh = str2double(get(threshEdit,'String'));
+handles.aabb = str2double(get(threshEdit,'String'));
+handles.thresharr = zeros(1,handles.n_images);
+handles.loadClicked = 0;
+handles.currentImage = 1;
+handles.silhs = [];
 
 
 %% Select the directory with the heart background images
@@ -152,6 +163,12 @@ function iDirButton_callback(~,~)
         
         % assign start number for the silhouettes files
         handles.sdigit = fileList(1).name(numCheck(end));
+        
+        % save out filenames
+        handles.fileList = fileList;
+        
+        % preallocate space for silhouettes
+        
     end
 
 %% Set the number of degrees per step
@@ -189,15 +206,69 @@ function iDirButton_callback(~,~)
             errordlg('Value must be positive and numeric','Invalid Input')
             set(threshEdit,'String','')
         else
-           handles.n_images = str2double(source.String); 
+           handles.def_thresh = str2double(source.String);
+           handles.thresharr = handles.thresharr + handles.def_thresh;
         end
+    end
+
+%% Apply threshold to images
+    function threshApply_callback(~,~)
+            % Clear axes
+            cla(silhView)
+            % Plot image to axes
+            fname = handles.fileList(handles.currentImage).name;
+            a = imread(fname);
+            a = rgb2gray(a);
+            a = double(a);
+            handles.a = a/max(max(a(:,:,1)));
+            axes(silhView)
+            imagesc(handles.a)
+            colormap('gray')
+            set(silhView,'XTick',[],'YTick',[])
+            % Calculate the outline based on the specified threshold settings
+            [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+            handles.silhs(:,:,handles.currentImage) = bw;
+            % Find outline and superimpose on image
+            outline = bwperim(bw,8);
+            [or,oc]=find(outline);
+            axes(silhView)
+            hold on
+            plot(oc,or,'y.');
+            hold off
+    end
+
+%% Add to the silhouette
+    function threshAdd_callback(~,~)
+        % Define region to add to silhouette
+        axes(silhView)
+        add = roipoly;
+        bw = handles.silhs(handles.currentImage);
+        bw = bw + add;
+        
+        % Replot image
+        cla(silhView)
+        axes(silhView)
+        imagesc(handles.a)
+        colormap('gray')
+        set(silhView,'XTick',[],'YTick',[])
+        
+        % Calculate and  plot new outline
+        outline = bwperim(bw,8);
+        [or,oc]=find(outline);
+        axes(silhView)
+        hold on
+        plot(oc,or,'y.');
+        hold off
+    end
+
+%% Subtract from the silhouette
+    function threshMinus_callback(~,~)
+        
     end
 
 %% Above or below threshold
     function abThreshPop_callback(source,~)
         if source.Value == 1
-            handles.aabb = [];
-        elseif source.Value == 2
             handles.aabb = 1;
         else
             handles.aabb = 0;
@@ -212,24 +283,186 @@ function iDirButton_callback(~,~)
         if fid~=-1
             set(msgCenter,'String','Found thresharr.dat!');
             fclose(fid);
-            loadthresh=1;
+            isthresh=1;
         else
             set(msgCenter,'String','Could not find thresharr.dat!');
-            loadthresh=0;
+            isthresh=0;
         end
         
+        % Change current directory to heart geometry directory
+        cd(handles.bdir)
+        
         % Load thresholds or set a default threshold
-        if loadthresh
-            pickThresh = questdlg('USE OLD THRESHOLDS OR ESTABLISH NEW ONES?',...
-                'Old vs. New','OLD','NEW','Old');
+        if isthresh
+            pickThresh = questdlg('FOUND THRESHARR.DAT! USE OLD THRESHOLDS OR ESTABLISH NEW ONES?',...
+                'Old vs. New','OLD','NEW','OLD');
             % Handle response
             switch pickThresh
-                case 'Old'
+                case 'OLD'
                     loadthresh = 1;
-                case 'New'
+                case 'NEW'
                     loadthresh = 0;
             end
         end
         
+        % Determine thresholds four silhouettes
+        if loadthresh
+            % Load established thresholds
+            load('thresharr.dat')
+        % Establish thresholds
+        else  
+            % Plot image to axes
+            fname = handles.fileList(handles.currentImage).name;
+            a = imread(fname);
+            a = rgb2gray(a);
+            a = double(a);
+            handles.a = a/max(max(a(:,:,1)));
+            axes(silhView)
+            imagesc(handles.a)
+            colormap('gray')
+            set(silhView,'XTick',[],'YTick',[])
         end
+        
+        % Preallocate space for silhouettes
+        handles.silhs = zeros(size(handles.a,1),size(handles.a,2),...
+            size(handles.thresharr,2));
+        
+        % Calculate the outline based on the specified threshold settings
+        [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+        handles.silhs(:,:,handles.currentImage) = bw;
+        % Find outline and superimpose on image
+        outline = bwperim(bw,8);
+        [or,oc]=find(outline);
+        axes(silhView)
+        hold on
+        plot(oc,or,'y.');
+        hold off
+        
+        % Disable button
+        set(loadBkgdButton,'Enable','off')
+        handles.loadClicked = 1;
+                  
+    end
+
+%% Callback for manually changing image number %%
+    function imNumEdit_callback(source,~)
+        % Grab edit box value
+        val = str2double(get(source,'String'));
+        if ~isnumeric(val) || isnan(val)
+            set(imNumEdit,'String',num2str(handles.currentImage))
+            msgbox('Must enter a positive numeric value.','Error','error')
+        elseif val < 0
+            set(imNumEdit,'String',num2str(handles.currentImage))
+            msgbox('Must enter a positive numeric value.','Error','error')
+        elseif val > handles.n_images
+            set(imNumEdit,'String',num2str(handles.currentImage))
+            msgbox('Must enter a value equal to or less than total number of images.',...
+                'Error','error')
+        else
+            % Update current image value
+            handles.currentImage = val;
+            % Update silhouette window
+            if handles.loadClicked
+                % Clear axes
+                cla(silhView)
+                % Plot image to axes
+                fname = handles.fileList(handles.currentImage).name;
+                a = imread(fname);
+                a = rgb2gray(a);
+                a = double(a);
+                handles.a = a/max(max(a(:,:,1)));
+                axes(silhView)
+                imagesc(handles.a)
+                colormap('gray')
+                set(silhView,'XTick',[],'YTick',[])
+                % Calculate the outline based on the specified threshold settings
+                [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+                handles.silhs(:,:,handles.currentImage) = bw;
+                % Find outline and superimpose on image
+                outline = bwperim(bw,8);
+                [or,oc]=find(outline);
+                axes(silhView)
+                hold on
+                plot(oc,or,'y.');
+                hold off
+            end
+        end
+    end
+
+%% Callback for incrementing image number
+    function imNumInc_callback(~,~)
+        % Update current image tracker
+        val = handles.currentImage;
+        if val+1 > handles.n_images
+            handles.currentImage = 1;
+            set(imNumEdit,'String',num2str(handles.currentImage))
+        else
+            handles.currentImage = val+1;
+            set(imNumEdit,'String',num2str(handles.currentImage))
+        end
+        % Update silhouette window
+        if handles.loadClicked
+            % Clear axes
+            cla(silhView)
+            % Plot image to axes
+            fname = handles.fileList(handles.currentImage).name;
+            a = imread(fname);
+            a = rgb2gray(a);
+            a = double(a);
+            handles.a = a/max(max(a(:,:,1)));
+            axes(silhView)
+            imagesc(handles.a)
+            colormap('gray')
+            set(silhView,'XTick',[],'YTick',[]);
+            % Calculate the outline based on the specified threshold settings
+            [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+            handles.silhs(:,:,handles.currentImage) = bw;
+            % Find outline and superimpose on image
+            outline = bwperim(bw,8);
+            [or,oc]=find(outline);
+            axes(silhView)
+            hold on
+            plot(oc,or,'y.');
+            hold off
+        end
+    end
+
+%% Callback for decrementing image number
+    function imNumDec_callback(~,~)
+        % Update current image tracker
+        val = handles.currentImage;
+        if val-1 == 0
+            handles.currentImage = handles.n_images;
+            set(imNumEdit,'String',num2str(handles.currentImage))
+        else
+            handles.currentImage = val-1;
+            set(imNumEdit,'String',num2str(handles.currentImage))
+        end
+        % Update silhouette window
+        if handles.loadClicked
+            % Clear axes
+            cla(silhView)
+            % Plot image to axes
+            fname = handles.fileList(handles.currentImage).name;
+            a = imread(fname);
+            a = rgb2gray(a);
+            a = double(a);
+            handles.a = a/max(max(a(:,:,1)));
+            axes(silhView)
+            imagesc(handles.a)
+            colormap('gray')
+            set(silhView,'XTick',[],'YTick',[]);
+            % Calculate the outline based on the specified threshold settings
+            [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+            handles.silhs(:,:,handles.currentImage) = bw;
+            % Find outline and superimpose on image
+            outline = bwperim(bw,8);
+            [or,oc]=find(outline);
+            axes(silhView)
+            hold on
+            plot(oc,or,'y.');
+            hold off
+        end
+    end
+
 end

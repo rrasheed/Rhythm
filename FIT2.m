@@ -333,7 +333,10 @@ handles.skipInd = [];                 % skipped calibration points
         val = get(source,'String');
         if ~isnumeric(str2double(val)) || isnan(str2double(val))
             set(calPtEdit,'String',num2str(handles.calStep))
-            msgbox('Must enter a numeric value.','Error','error')
+            msgbox('Must enter a positive numeric value.','Error','error')
+        elseif val < 0
+            set(calPtEdit,'String',num2str(handles.calStep))
+            msgbox('Must enter a positive numeric value.','Error','error')
         else
             step = str2double(val);
             handles.calStep = step;
