@@ -49,6 +49,8 @@ threshAdd = uicontrol('Parent',pR,'Style','pushbutton','String','Add',...
     'FontSize',12,'Position',[425 40 40 20],'Callback',{@threshAdd_callback});
 threshMinus = uicontrol('Parent',pR,'Style','pushbutton','String',...
     'Minus','FontSize',12,'Position',[470 40 40 20],'Callback',{@threshMinus_callback});
+silhSave = uicontrol('Parent',pR,'Style','pushbutton','String','Save',...
+    'FontSize',12,'Position',[375 40 40 20],'Callback',{@silhSave_callback});
 
 % Load background images
 loadBkgdButton = uicontrol('Parent',pR,'Style','pushbutton','String',...
@@ -75,8 +77,8 @@ msgCenter = uicontrol('Parent',pR,'Style','text','String','','FontSize',...
 % Allow all GUI structures to be scaled when window is dragged
 set([pR,silhView,hDirButton,hDirTxt,degreeTxt,degreeEdit,imagesTxt,imagesEdit,...
     threshTxt,threshEdit,loadBkgdButton,msgCenter,abThreshPop,iDirButton,...
-    iDirTxt,imNumEdit,imNumInc,imNumDec,threshApply,threshAdd,threshMinus],...
-    'Units','normalized')
+    iDirTxt,imNumEdit,imNumInc,imNumDec,threshApply,threshAdd,threshMinus,...
+    silhSave],'Units','normalized')
 
 % Center GUI on screen
 movegui(pR,'center')
@@ -235,32 +237,98 @@ function iDirButton_callback(~,~)
             hold on
             plot(oc,or,'y.');
             hold off
+            
+            stats = regionprops(bw,'all');
+            % Image area
+            handles.area(handles.currentImage) = stats.Area;
+            % Limits of image in x and y coordinates
+            lims = stats.BoundingBox;
+            xl1=ceil(lims(1));
+            yl1=ceil(lims(2));
+            xl2=xl1+lims(3);
+            yl2=yl1+lims(4);
+            % limits
+            handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
+            
     end
 
 %% Add to the silhouette
     function threshAdd_callback(~,~)
+        % Define region to add to silhouette
+        CI = handles.currentImage;
         axes(silhView)
         add = roipoly;
-        handles.silhs = handles.silhs+add;
-        
-        
-        cla(silhView)
-        axes(silhView)
-        imagesc(handles.a)
-        colormap('gray')
-        set(silhView,'XTick',[],'YTick',[])
-        
-        outline = bwperim(bw,8);
-        [or,oc]=find(outline);
-        axes(silhView)
-        hold on
-        plot(oc,or,'y.');
-        hold off
+        if ~isempty(add)
+            handles.silhs(:,:,CI) = handles.silhs(:,:,CI) + add;
+            handles.silhs(:,:,CI) = handles.silhs(:,:,CI) > 0;
+            
+            % Replot image
+            cla(silhView)
+            axes(silhView)
+            imagesc(handles.a)
+            colormap('gray')
+            set(silhView,'XTick',[],'YTick',[])
+            
+            % Calculate and  plot new outline
+            outline = bwperim(handles.silhs(:,:,CI),8);
+            [or,oc]=find(outline);
+            axes(silhView)
+            hold on
+            plot(oc,or,'y.');
+            hold off
+            
+            stats = regionprops(handles.silhs(:,:,CI),'all');
+            % Image area
+            handles.area(handles.currentImage) = stats.Area;
+            % Limits of image in x and y coordinates
+            lims = stats.BoundingBox;
+            xl1=ceil(lims(1));
+            yl1=ceil(lims(2));
+            xl2=xl1+lims(3);
+            yl2=yl1+lims(4);
+            % limits
+            handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
+            
+        end
     end
 
 %% Subtract from the silhouette
     function threshMinus_callback(~,~)
-        
+        % Define region to add to silhouette
+        CI = handles.currentImage;
+        axes(silhView)
+        minus = roipoly;
+        if ~isempty(minus)
+            handles.silhs(:,:,CI) = handles.silhs(:,:,CI) - minus;
+            handles.silhs(:,:,CI) = handles.silhs(:,:,CI) > 0;
+            
+            % Replot image
+            cla(silhView)
+            axes(silhView)
+            imagesc(handles.a)
+            colormap('gray')
+            set(silhView,'XTick',[],'YTick',[])
+            
+            % Calculate and  plot new outline
+            outline = bwperim(handles.silhs(:,:,CI),8);
+            [or,oc]=find(outline);
+            axes(silhView)
+            hold on
+            plot(oc,or,'y.');
+            hold off
+            
+            stats = regionprops(handles.silhs(:,:,CI),'all');
+            % Image area
+            handles.area(handles.currentImage) = stats.Area;
+            % Limits of image in x and y coordinates
+            lims = stats.BoundingBox;
+            xl1=ceil(lims(1));
+            yl1=ceil(lims(2));
+            xl2=xl1+lims(3);
+            yl2=yl1+lims(4);
+            % limits
+            handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
+        end
     end
 
 %% Above or below threshold
@@ -274,38 +342,43 @@ function iDirButton_callback(~,~)
 
 %% Load background images
     function loadBkgdButton_callback(~,~)
-        % Check for already established threshold values
+        % Check for already established silhouettes
         cd(handles.hdir)
-        fid=fopen('thresharr.dat');
+        fid=fopen('silhs1.mat');
         if fid~=-1
-            set(msgCenter,'String','Found thresharr.dat!');
+            set(msgCenter,'String','Found silhouettes!');
             fclose(fid);
-            isthresh=1;
+            issilh=1;
         else
-            set(msgCenter,'String','Could not find thresharr.dat!');
-            isthresh=0;
+            set(msgCenter,'String','Could not find silhouettes!');
+            issilh=0;
         end
         
         % Change current directory to heart geometry directory
         cd(handles.bdir)
         
         % Load thresholds or set a default threshold
-        if isthresh
-            pickThresh = questdlg('FOUND THRESHARR.DAT! USE OLD THRESHOLDS OR ESTABLISH NEW ONES?',...
+        if issilh
+            pickSilh = questdlg('FOUND THRESHARR.DAT! USE OLD THRESHOLDS OR ESTABLISH NEW ONES?',...
                 'Old vs. New','OLD','NEW','OLD');
             % Handle response
-            switch pickThresh
+            switch pickSilh
                 case 'OLD'
-                    loadthresh = 1;
+                    loadsilh = 1;
                 case 'NEW'
-                    loadthresh = 0;
+                    loadsilh = 0;
             end
         end
         
         % Determine thresholds four silhouettes
-        if loadthresh
+        if issilh == 1 && loadsilh == 1
             % Load established thresholds
-            load('thresharr.dat')
+            load('silhs1.mat')
+            handles.lims = lims;
+            handles.area = area;
+            handles.silhs = silhs;
+            % Setup first threshold
+            bw = handles.silhs(:,:,handles.currentImage);
         % Establish thresholds
         else  
             % Plot image to axes
@@ -314,19 +387,19 @@ function iDirButton_callback(~,~)
             a = rgb2gray(a);
             a = double(a);
             handles.a = a/max(max(a(:,:,1)));
+            % Preallocate space for silhouettes
+            handles.silhs = zeros(size(handles.a,1),size(handles.a,2),...
+                size(handles.thresharr,2));
+            % Plot image to plot
             axes(silhView)
             imagesc(handles.a)
             colormap('gray')
             set(silhView,'XTick',[],'YTick',[])
+            % Calculate the outline based on the specified threshold settings
+            [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+            handles.silhs(:,:,handles.currentImage) = bw;
         end
         
-        % Preallocate space for silhouettes
-        handles.silhs = zeros(size(handles.a,1),size(handles.a,2),...
-            size(handles.thresharr,2));
-        
-        % Calculate the outline based on the specified threshold settings
-        [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
-        handles.silhs(:,:,handles.currentImage) = bw;
         % Find outline and superimpose on image
         outline = bwperim(bw,8);
         [or,oc]=find(outline);
@@ -335,10 +408,33 @@ function iDirButton_callback(~,~)
         plot(oc,or,'y.');
         hold off
         
+        stats = regionprops(bw,'all');
+        % Image area
+        handles.area(handles.currentImage) = stats.Area;
+        % Limits of image in x and y coordinates
+        lims = stats.BoundingBox;
+        xl1=ceil(lims(1));
+        yl1=ceil(lims(2));
+        xl2=xl1+lims(3);
+        yl2=yl1+lims(4);
+        % limits
+        handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
+        
         % Disable button
         set(loadBkgdButton,'Enable','off')
         handles.loadClicked = 1;
                   
+    end
+
+%% Callback for saving silhouettes
+    function silhSave_callback(~,~)
+        currentdir = pwd;
+        cd(handles.hdir)
+        silhs = handles.silhs;
+        lims = handles.lims;
+        area = handles.area;
+        save('silhs1.mat','silhs','lims','area')
+        cd(currentdir)
     end
 
 %% Callback for manually changing image number %%
@@ -362,6 +458,7 @@ function iDirButton_callback(~,~)
             if handles.loadClicked
                 % Clear axes
                 cla(silhView)
+                
                 % Plot image to axes
                 fname = handles.fileList(handles.currentImage).name;
                 a = imread(fname);
@@ -372,9 +469,15 @@ function iDirButton_callback(~,~)
                 imagesc(handles.a)
                 colormap('gray')
                 set(silhView,'XTick',[],'YTick',[])
+                
                 % Calculate the outline based on the specified threshold settings
-                [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
-                handles.silhs(:,:,handles.currentImage) = bw;
+                if sum(sum(handles.silhs(:,:,handles.currentImage))) == 0
+                    [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+                    handles.silhs(:,:,handles.currentImage) = bw;
+                else
+                    bw = handles.silhs(:,:,handles.currentImage);
+                end
+              
                 % Find outline and superimpose on image
                 outline = bwperim(bw,8);
                 [or,oc]=find(outline);
@@ -382,6 +485,19 @@ function iDirButton_callback(~,~)
                 hold on
                 plot(oc,or,'y.');
                 hold off
+                
+                stats = regionprops(bw,'all');
+                % Image area
+                handles.area(handles.currentImage) = stats.Area;
+                % Limits of image in x and y coordinates
+                lims = stats.BoundingBox;
+                xl1=ceil(lims(1));
+                yl1=ceil(lims(2));
+                xl2=xl1+lims(3);
+                yl2=yl1+lims(4);
+                % limits
+                handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
+                
             end
         end
     end
@@ -412,8 +528,12 @@ function iDirButton_callback(~,~)
             colormap('gray')
             set(silhView,'XTick',[],'YTick',[]);
             % Calculate the outline based on the specified threshold settings
-            [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
-            handles.silhs(:,:,handles.currentImage) = bw;
+            if sum(sum(handles.silhs(:,:,handles.currentImage))) == 0
+                [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+                handles.silhs(:,:,handles.currentImage) = bw;
+            else
+                bw = handles.silhs(:,:,handles.currentImage);
+            end
             % Find outline and superimpose on image
             outline = bwperim(bw,8);
             [or,oc]=find(outline);
@@ -421,6 +541,18 @@ function iDirButton_callback(~,~)
             hold on
             plot(oc,or,'y.');
             hold off
+            
+            stats = regionprops(bw,'all');
+            % Image area
+            handles.area(handles.currentImage) = stats.Area;
+            % Limits of image in x and y coordinates
+            lims = stats.BoundingBox;
+            xl1=ceil(lims(1));
+            yl1=ceil(lims(2));
+            xl2=xl1+lims(3);
+            yl2=yl1+lims(4);
+            % limits
+            handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
         end
     end
 
@@ -450,8 +582,12 @@ function iDirButton_callback(~,~)
             colormap('gray')
             set(silhView,'XTick',[],'YTick',[]);
             % Calculate the outline based on the specified threshold settings
-            [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
-            handles.silhs(:,:,handles.currentImage) = bw;
+            if sum(sum(handles.silhs(:,:,handles.currentImage))) == 0
+                [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+                handles.silhs(:,:,handles.currentImage) = bw;
+            else
+                bw = handles.silhs(:,:,handles.currentImage);
+            end
             % Find outline and superimpose on image
             outline = bwperim(bw,8);
             [or,oc]=find(outline);
@@ -459,6 +595,19 @@ function iDirButton_callback(~,~)
             hold on
             plot(oc,or,'y.');
             hold off
+            
+            stats = regionprops(bw,'all');
+            % Image area
+            handles.area(handles.currentImage) = stats.Area;
+            % Limits of image in x and y coordinates
+            lims = stats.BoundingBox;
+            xl1=ceil(lims(1));
+            yl1=ceil(lims(2));
+            xl2=xl1+lims(3);
+            yl2=yl1+lims(4);
+            % limits
+            handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
+            
         end
     end
 
