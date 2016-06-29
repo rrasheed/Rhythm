@@ -2,7 +2,8 @@ function WHIRL2
 close all
 % Description: Adaption of whirl.m written by Dr. Matthew Kay to a 
 % graphical user interface for designating silhouettes of panoramic imaging 
-% geometry.
+% geometry. Make sure the camera calibration files Par.dat and Rc.dat are
+% located in the home directory prior to initiating GUI.
 %
 % Author: Christopher Gloschat
 % Date: June 20, 2016
@@ -51,6 +52,8 @@ threshMinus = uicontrol('Parent',pR,'Style','pushbutton','String',...
     'Minus','FontSize',12,'Position',[470 40 40 20],'Callback',{@threshMinus_callback});
 silhSave = uicontrol('Parent',pR,'Style','pushbutton','String','Save',...
     'FontSize',12,'Position',[375 40 40 20],'Callback',{@silhSave_callback});
+silhProcess = uicontrol('Parent',pR,'Style','pushbutton','String','Process',...
+    'FontSize',12,'Position',[375 10 40 20],'Callback',{@silhProcess_callback});
 
 % Load background images
 loadBkgdButton = uicontrol('Parent',pR,'Style','pushbutton','String',...
@@ -78,7 +81,7 @@ msgCenter = uicontrol('Parent',pR,'Style','text','String','','FontSize',...
 set([pR,silhView,hDirButton,hDirTxt,degreeTxt,degreeEdit,imagesTxt,imagesEdit,...
     threshTxt,threshEdit,loadBkgdButton,msgCenter,abThreshPop,iDirButton,...
     iDirTxt,imNumEdit,imNumInc,imNumDec,threshApply,threshAdd,threshMinus,...
-    silhSave],'Units','normalized')
+    silhSave,silhProcess],'Units','normalized')
 
 % Center GUI on screen
 movegui(pR,'center')
@@ -112,9 +115,9 @@ handles.silhs = [];
     end
 
 %% Select image directory
-function iDirButton_callback(~,~)
-         % select experimental directory
-        handles.bdir = uigetdir;        
+    function iDirButton_callback(~,~)
+        % select experimental directory
+        handles.bdir = uigetdir;
         % populate text field
         set(iDirTxt,'String',['...' handles.bdir(length(handles.hdir)+1:end)])
         % change directory
@@ -124,7 +127,7 @@ function iDirButton_callback(~,~)
         % check which list items are directories and which are files
         checkFiles = zeros(size(fileList,1),1);
         for n = 1:length(checkFiles)
-           checkFiles(n) = fileList(n).isdir; 
+            checkFiles(n) = fileList(n).isdir;
         end
         % grab indices of the files that are directories
         checkFiles = checkFiles.*(1:length(checkFiles))';
@@ -137,11 +140,11 @@ function iDirButton_callback(~,~)
         charCheck = zeros(length(fileList(1).name),1);
         for n = 1:length(charCheck)
             % char(46) is a period
-           charCheck(n) = fileList(1).name(n) == char(46);
-           if charCheck(n) == 1
-               middleInd = n;
-               break
-           end
+            charCheck(n) = fileList(1).name(n) == char(46);
+            if charCheck(n) == 1
+                middleInd = n;
+                break
+            end
         end
         % assign the file type
         handles.sfilename = fileList(1).name(middleInd+1:end);
@@ -182,7 +185,7 @@ function iDirButton_callback(~,~)
             errordlg('Value must be positive and numeric','Invalid Input')
             set(degreeEdit,'String','')
         else
-           handles.dtheta = str2double(source.String); 
+            handles.dtheta = str2double(source.String);
         end
     end
 
@@ -195,7 +198,7 @@ function iDirButton_callback(~,~)
             errordlg('Value must be positive and numeric','Invalid Input')
             set(imagesEdit,'String','')
         else
-           handles.n_images = str2double(source.String); 
+            handles.n_images = str2double(source.String);
         end
     end
 
@@ -208,48 +211,48 @@ function iDirButton_callback(~,~)
             errordlg('Value must be positive and numeric','Invalid Input')
             set(threshEdit,'String','')
         else
-           handles.def_thresh = str2double(source.String);
-           handles.thresharr = handles.thresharr + handles.def_thresh;
+            handles.def_thresh = str2double(source.String);
+            handles.thresharr = handles.thresharr + handles.def_thresh;
         end
     end
 
 %% Apply threshold to images
     function threshApply_callback(~,~)
-            % Clear axes
-            cla(silhView)
-            % Plot image to axes
-            fname = handles.fileList(handles.currentImage).name;
-            a = imread(fname);
-            a = rgb2gray(a);
-            a = double(a);
-            handles.a = a/max(max(a(:,:,1)));
-            axes(silhView)
-            imagesc(handles.a)
-            colormap('gray')
-            set(silhView,'XTick',[],'YTick',[])
-            % Calculate the outline based on the specified threshold settings
-            [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
-            handles.silhs(:,:,handles.currentImage) = bw;
-            % Find outline and superimpose on image
-            outline = bwperim(bw,8);
-            [or,oc]=find(outline);
-            axes(silhView)
-            hold on
-            plot(oc,or,'y.');
-            hold off
-            
-            stats = regionprops(bw,'all');
-            % Image area
-            handles.area(handles.currentImage) = stats.Area;
-            % Limits of image in x and y coordinates
-            lims = stats.BoundingBox;
-            xl1=ceil(lims(1));
-            yl1=ceil(lims(2));
-            xl2=xl1+lims(3);
-            yl2=yl1+lims(4);
-            % limits
-            handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
-            
+        % Clear axes
+        cla(silhView)
+        % Plot image to axes
+        fname = handles.fileList(handles.currentImage).name;
+        a = imread(fname);
+        a = rgb2gray(a);
+        a = double(a);
+        handles.a = a/max(max(a(:,:,1)));
+        axes(silhView)
+        imagesc(handles.a)
+        colormap('gray')
+        set(silhView,'XTick',[],'YTick',[])
+        % Calculate the outline based on the specified threshold settings
+        [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
+        handles.silhs(:,:,handles.currentImage) = bw;
+        % Find outline and superimpose on image
+        outline = bwperim(bw,8);
+        [or,oc]=find(outline);
+        axes(silhView)
+        hold on
+        plot(oc,or,'y.');
+        hold off
+        
+        stats = regionprops(bw,'all');
+        % Image area
+        handles.area(handles.currentImage) = stats.Area;
+        % Limits of image in x and y coordinates
+        lims = stats.BoundingBox;
+        xl1=ceil(lims(1));
+        yl1=ceil(lims(2));
+        xl2=xl1+lims(3);
+        yl2=yl1+lims(4);
+        % limits
+        handles.lims(handles.currentImage,:) = [xl1 xl2 yl1 yl2];
+        
     end
 
 %% Add to the silhouette
@@ -359,7 +362,7 @@ function iDirButton_callback(~,~)
         
         % Load thresholds or set a default threshold
         if issilh
-            pickSilh = questdlg('FOUND THRESHARR.DAT! USE OLD THRESHOLDS OR ESTABLISH NEW ONES?',...
+            pickSilh = questdlg('FOUND SILHS1.MAT! USE OLD SILHOUETTES OR ESTABLISH NEW ONES?',...
                 'Old vs. New','OLD','NEW','OLD');
             % Handle response
             switch pickSilh
@@ -370,35 +373,41 @@ function iDirButton_callback(~,~)
             end
         end
         
+        % Prep image variable
+        fname = handles.fileList(handles.currentImage).name;
+        a = imread(fname);
+        a = rgb2gray(a);
+        a = double(a);
+        handles.a = a/max(max(a(:,:,1)));
+        
         % Determine thresholds four silhouettes
         if issilh == 1 && loadsilh == 1
-            % Load established thresholds
+            % Load established silhouettes
+            cd(handles.hdir)
+            silhs = [];
+            lims = [];
+            area = [];
             load('silhs1.mat')
             handles.lims = lims;
             handles.area = area;
             handles.silhs = silhs;
             % Setup first threshold
             bw = handles.silhs(:,:,handles.currentImage);
-        % Establish thresholds
-        else  
-            % Plot image to axes
-            fname = handles.fileList(handles.currentImage).name;
-            a = imread(fname);
-            a = rgb2gray(a);
-            a = double(a);
-            handles.a = a/max(max(a(:,:,1)));
+            cd(handles.bdir)
+            % Establish thresholds
+        else
             % Preallocate space for silhouettes
             handles.silhs = zeros(size(handles.a,1),size(handles.a,2),...
                 size(handles.thresharr,2));
-            % Plot image to plot
-            axes(silhView)
-            imagesc(handles.a)
-            colormap('gray')
-            set(silhView,'XTick',[],'YTick',[])
             % Calculate the outline based on the specified threshold settings
             [bw] = calcSilh(handles.a,handles.def_thresh,handles.aabb);
             handles.silhs(:,:,handles.currentImage) = bw;
         end
+        % Plot image to plot
+        axes(silhView)
+        imagesc(handles.a)
+        colormap('gray')
+        set(silhView,'XTick',[],'YTick',[])
         
         % Find outline and superimpose on image
         outline = bwperim(bw,8);
@@ -423,7 +432,7 @@ function iDirButton_callback(~,~)
         % Disable button
         set(loadBkgdButton,'Enable','off')
         handles.loadClicked = 1;
-                  
+        
     end
 
 %% Callback for saving silhouettes
@@ -436,6 +445,166 @@ function iDirButton_callback(~,~)
         save('silhs1.mat','silhs','lims','area')
         cd(currentdir)
     end
+
+%% Callback for processing silhouettes
+    function silhProcess_callback(~,~)
+        % Determine front back positions
+        r=0:handles.dtheta:(handles.n_images*handles.dtheta-1);
+        if rem(360,handles.dtheta)==0
+            % Determine front/back positions
+            frontback=1;
+            rr=zeros(length(r),5).*NaN;
+            r1=find(r-180<0);
+            r2=find(r-180>=0);
+            rr(1:length(r1),1)=r(r1)';
+            rr(1:length(r2),2)=r(r2)';
+            rr(1:length(r1),3)=r1';
+            rr(1:length(r2),4)=r2';
+            rnot=find(isnan(rr(:,1)) & isnan(rr(:,2)));
+            rr(rnot,:)=[];
+            sprintf('Front/Back positions:')
+            disp('Front : Back : Front Index : Back Index : ?')
+            disp(rr)
+            clear r1 r2 rnot
+        else
+            
+            % No front/back images
+            frontback=0;
+            rr=zeros(size(r,2),5).*NaN;
+            rr(:,1)=r';
+            disp(rr(:,1))
+            sprintf('No Front/Back positions!')
+        end
+        
+        % Ask user if they wish to reduce redundancy
+        if frontback
+            go=1;
+            while go
+                collapseSilhs = questdlg(['USE LARGEST SILHOUETTES TO COLLAPSE'...
+                    ' REDUNDANT INFORMATION IN FRONT/BACK SNAPSHOTS? [N]:'],...
+                    'Collapse Redudant Silhouettes?','Yes','No','No');
+                switch collapseSilhs
+                    case 'Yes'
+                        go = 0;
+                        dofrontback = 1;
+                    case 'No'
+                        go = 0;
+                        dofrontback = 0;
+                end
+            end
+        end
+        if dofrontback
+            for i=1:size(rr,1)
+                ars=[handles.area(rr(i,3)) handles.area(rr(i,4))];
+                maxarsi=find(ars==max(ars));
+                if maxarsi==1, rr(i,5)=rr(i,3); end;
+                if maxarsi==2, rr(i,5)=rr(i,4); end;
+            end
+            disp('First 2 columns are snapshot angle.')
+            disp('Next 2 columns are corresponding snapshot numbers.')
+            disp('Last column is snapshot number of larger silhouette:')
+            disp(rr)
+            disp('Snapshots taken at these angles will be used.')
+            disp('First column is snapshot number.')
+            disp('Second column is the angle.')
+            [rsort,isort]=sort(r(rr(:,5)));
+            inumsort=rr(isort,5);
+            irsort=[inumsort rsort'];
+            disp([inumsort rsort'])
+        else
+            disp('Snapshots taken at these angles will be used.')
+            disp('First column is snapshot number.')
+            disp('Second column is the angle. ')
+            rsort=r;
+            inumsort=1:length(r);
+            irsort=[inumsort' rsort'];
+            disp([inumsort' rsort'])
+        end
+        silh = handles.silhs;
+        lims = handles.lims;
+        %-------------------------------------------------------------------------%
+        % % %         % Load camera calibrations
+        % % %         fprintf('\n Load camera parameters:\n');
+        % % %         % Find Rc.dat file
+        % % %         Rcfname = [handles.hdir '/Rc.dat'];
+        % % %         fid = fopen(Rcfname);
+        % % %         if fid == -1
+        % % %             set(msgCenter,'String',['Could not find Rc.dat! Place '...
+        % % %                 'Rc.dat in home directory and try again.']);
+        % % %             return
+        % % %         else
+        % % %             fclose(fid);
+        % % %             set(msgCenter,'String','Found Rc.dat.');
+        % % %             [Rc,Rc_ntheta,Rc_dtheta,message]=readRccal(Rcfname);
+        % % %             if handles.dtheta~=Rc_dtheta
+        % % %                 set(msgCenter,'String',['Designated value for theta in WHIRL '...
+        % % %                     'does not match the theta value in Rc.dat. Process aborted!']);
+        % % %                 return
+        % % %             end
+        % % %         end
+        % % %         Parfname = [handles.hdir '/Par.dat'];
+        % % %         fid = fopen(Parfname);
+        % % %         if fid == -1
+        % % %             set(msgCenter,'String',['Could not find Par.dat! Place '...
+        % % %                 'Par.dat in home directory and try again.']);
+        % % %             return
+        % % %         else
+        % % %             fclose(fid);
+        % % %             set(msgCenter,'String','Found Rc.dat.');
+        % % %             [Par,Par_ntheta,Par_dtheta,message]=readParcal(Rcfname);
+        % % %             if handles.dtheta~=Rc_dtheta
+        % % %                 set(msgCenter,'String',['Designated value for theta in WHIRL '...
+        % % %                     'does not match the theta value in Par.dat. Process aborted!']);
+        % % %                 return
+        % % %             end
+        % % %         end
+        % % %         disp('Camera parameters loaded.')
+        % % %         % Check camera calibration directionality
+        % % %         calibDirection = questdlg(['IF CAMERA CAILBRATION AND OBJECT SCANNING '...
+        % % %             'DIRECTIONALITY (E.G. CW OR CCW) DO NOT MATCH THE CALIBRATION MUST '...
+        % % %             'BE REORDERED. IS REORDERING NEEDED? [N]'],'Reorder Camera Calibration',...
+        % % %             'Yes','No','No');
+        % % %         switch calibDirection
+        % % %             case 'Yes'
+        % % %                 disp('Reordering camera parameters ....')
+        % % %                 Par(1:8,2:end)=fliplr(Par(1:8,2:end));
+        % % %                 Rc_new=Rc;
+        % % %                 for i=2:size(Rc,3)
+        % % %                     Rc_new(1:4,1:4,i)=Rc(1:4,1:4,size(Rc,3)-i+2);
+        % % %                 end
+        % % %                 Rc=Rc_new;
+        % % %                 clear Rc_new
+        % % %             case 'No'
+        % % %                 disp('Ok, will not reorder camera parameters...')
+        % % %         end
+        % % %
+        % % %         % Plot orbit to check spin and angle consistency
+        % % %         disp('Check camera rotation .... ');
+        % % %         for i=1:size(Rc,3)
+        % % %             xyz(i,:)=(inv(Rc(1:4,1:4,i))*[0 0 0 1]')';
+        % % %         end
+        % % %         tt=figure; hold on; axis('square');
+        % % %         axis([min(xyz(:,1)) max(xyz(:,1)) min(xyz(:,2)) max(xyz(:,2)) min(xyz(:,3)) max(xyz(:,3)) ]);
+        % % %         xlabel('x (mm)');
+        % % %         ylabel('y (mm)');
+        % % %         zlabel('z (mm)');
+        % % %         for i=1:size(Rc,3)
+        % % %             fprintf('Angle %d',Rc(1,5,i));
+        % % %             figure(tt);
+        % % %             if i==1, text(xyz(i,1),xyz(i,2),xyz(i,3),sprintf('%d',Rc(1,5,i)));
+        % % %             else
+        % % %                 text(xyz(i,1),xyz(i,2),xyz(i,3),sprintf('%d',Rc(1,5,i)));
+        % % %             end
+        % % %             pause(0.1);
+        % % %         end
+        % % %         clear xyz;
+        
+        % Perform occluding contours cube carving
+        cubeCarving(handles.hdir,handles.silhs,handles.lims,...
+            handles.dtheta,handles.n_images,dofrontback,r,rr,irsort,...
+            inumsort,rsort)
+    end
+
 
 %% Callback for manually changing image number %%
     function imNumEdit_callback(source,~)
@@ -477,7 +646,7 @@ function iDirButton_callback(~,~)
                 else
                     bw = handles.silhs(:,:,handles.currentImage);
                 end
-              
+                
                 % Find outline and superimpose on image
                 outline = bwperim(bw,8);
                 [or,oc]=find(outline);
