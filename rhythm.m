@@ -1,5 +1,5 @@
 function rhythm
-close all; clc;
+% % close all; clc;
 %% RHYTHM (01/27/2012)
 % Matlab software for analyzing optical mapping data
 %
@@ -7,10 +7,11 @@ close all; clc;
 % Washington University in St. Louis -- Efimov Lab
 %
 % Currently maintained by: Christopher Gloschat [Jan. 2015 - Present]
+%                          Rayhaan Rasheed [Jan 2016 - Present]
 %
 % For any questions and suggestions, please email us at:
 % cgloschat@gmail.com or igor@wustl.edu
-%
+% 
 % Modification Log:
 % Jan. 23, 2015 - 1) Size of tools adjusted for MATLAB 2014a to constrain 
 % all tools and labels to their groups. Mostly cosmetic adjustment. 2) I
@@ -31,6 +32,11 @@ close all; clc;
 % Feb. 24, 2016 - The GUI has been streamlined to reduce clutter and create
 % a space for plugins created by future users.
 %
+% June 21, 2016 - Very large update. Addition of checkbox to toggle between
+% calcium and voltage data, and a Signal to Noise ratio calculator to display
+% mask of high and lows of SNR. Modification to CMOSConverter to accomodate
+% various rsh files. Creation of Analyze Data scroll down to reduce clutter
+% 
 %
 
 %% Create GUI structure
@@ -40,10 +46,10 @@ f = figure('Name','RHYTHM','Visible','off','Position',[scrn_size(3),scrn_size(4)
 
 % Load Data
 p1 = uipanel('Title','Display Data','FontSize',12,'Position',[.01 .01 .98 .98]);
-filelist = uicontrol('Parent',p1,'Style','listbox','String','Files','Position',[10 240 150 450],'Callback',{@filelist_callback});
-selectdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Select Directory','Position',[10 205 150 30],'Callback',{@selectdir_callback});
-loadfile = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Load','Position',[10 175 150 30],'Callback',{@loadfile_callback});
-refreshdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Refresh Directory','Position',[10 145 150 30],'Callback',{@refreshdir_callback});
+filelist = uicontrol('Parent',p1,'Style','listbox','String','Files','Position',[10 440 150 250],'Callback',{@filelist_callback});
+selectdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Select Directory','Position',[10 405 150 30],'Callback',{@selectdir_callback});
+loadfile = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Load','Position',[10 375 150 30],'Callback',{@loadfile_callback});
+refreshdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Refresh Directory','Position',[10 345 150 30],'Callback',{@refreshdir_callback});
 
 % Movie Screen for Optical Data
 movie_scrn = axes('Parent',p1,'Units','Pixels','YTick',[],'XTick',[],'Position',[170, 190, 500,500]);
@@ -101,9 +107,11 @@ set(filt_popup,'Value',3)
 
 % Optical Action Potential Analysis Button Group and Buttons
 % Create Button Group
-anal_data = uibuttongroup('Parent',p1,'Title','Analyze Data','FontSize',12,'Position',[0.275 0.015 .272 .180]);
+anal_data = uibuttongroup('Parent',p1,'Title','Analyze Data','FontSize',12,'Position',[0.275 0.015 .270 .180]);
 
 anal_select = uicontrol('Parent',anal_data,'Style','popupmenu','FontSize',12,'String',{'-----','Activation','Conduction','APD','Phase','Dominant Frequency'},'Position',[5 85 165 25],'Callback',{@anal_select_callback});
+
+sig_noise = uicontrol('Parent', p1,'Style','pushbutton','FontSize',12,'String','Calculate SNR', 'Position',[10 145 150 30],'Callback',{@sig2noise});
 
 % Invert Color Map Option
 invert_cmap = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',12,'String','Invert Colormaps','Position',[175 88 150 25],'Visible','on','Callback',{@invert_cmap_callback});
@@ -125,6 +133,13 @@ remove_motion_click = uicontrol('Parent',anal_data,'Style','checkbox','FontSize'
 remove_motion_click_txt = uicontrol('Parent',anal_data,'Style','text','FontSize',12,'String','Motion','Visible','on','Position',[248 15 50 25]);
 calc_apd_button = uicontrol('Parent',anal_data,'Style','pushbutton','FontSize',12,'String','Regional APD','Position',[125 2 103 30],'Callback',{@calc_apd_button_callback});
 
+% Check boxes to allow choice of voltage plot, Ca plot, or both
+plot_choice = uibuttongroup('Parent',p1,'Title','Plot Choice','FontSize',12,'Position',[0.01 0.32 .12 .160]);
+volt_choice = uicontrol('Parent',plot_choice,'Style','checkbox','FontSize',12,'String','Plot Voltage','Position',[5 60 165 25],'Callback',@checkbox_volt);
+set(volt_choice, 'Value', 1);
+cal_choice = uicontrol('Parent',plot_choice,'Style','checkbox','FontSize',12,'String','Plot Calcium','Position',[5 30 165 25],'Callback',@checkbox_volt);
+set(cal_choice, 'Value', 1);
+  
 % Allow all GUI structures to be scaled when window is dragged
 set([f,p1,filelist,selectdir,refreshdir,loadfile,movie_scrn,movie_slider, signal_scrn1,signal_scrn2,signal_scrn3,...
     signal_scrn4,signal_scrn5,sweep_bar,play_button,stop_button,dispwave_button,expmov_button,cond_sig,removeBG_button,...
@@ -132,14 +147,14 @@ set([f,p1,filelist,selectdir,refreshdir,loadfile,movie_scrn,movie_slider, signal
     apply_button,bin_popup,filt_popup,drift_popup,export_button,anal_data,anal_select,invert_cmap,starttimemap_text,...
     starttimemap_edit,endtimemap_text,endtimemap_edit,createmap_button,minapd_text,minapd_edit,maxapd_text,maxapd_edit,...
     percentapd_text,percentapd_edit,remove_motion_click,remove_motion_click_txt,calc_apd_button,expwave_button,...
-    starttimesig_text,starttimesig_edit,endtimesig_text,endtimesig_edit],'Units','normalized')
+    starttimesig_text,starttimesig_edit,sig_noise,endtimesig_text,endtimesig_edit],'Units','normalized')
 
 % Disable buttons that will not be needed until data is loaded
 set([removeBG_button,bg_thresh_edit,bg_thresh_label,perc_ex_edit,perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
     apply_button,bin_popup,filt_popup,drift_popup,anal_select,starttimemap_edit,starttimemap_text,endtimemap_edit,endtimemap_text,...
     createmap_button,minapd_edit,minapd_text,maxapd_edit,maxapd_text,percentapd_edit,percentapd_text,remove_motion_click,remove_motion_click_txt,...
     calc_apd_button,play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,endtimesig_edit,expwave_button,loadfile,...
-    refreshdir,invert_cmap,export_button],'Enable','off')
+    refreshdir,invert_cmap,export_button,volt_choice,cal_choice,sig_noise],'Enable','off')
 
 % Hide all analysis buttons
 set([invert_cmap,starttimemap_text,starttimemap_edit,endtimemap_text,...
@@ -171,6 +186,8 @@ handles.minVisible = 6;
 handles.normalizeMinVisible = .3;
 handles.cmap = colormap('jet'); %saves the default colormap values
 handles.apdC = [];  % variable for storing apd calculations
+handles.checkbox = []; %hold the variables that plot the Ca and Vm data
+handles.choice = []; %hold the values for the individual boxes in the checkbox
 
 %% All Callback functions
 
@@ -279,29 +296,14 @@ handles.apdC = [];  % variable for storing apd calculations
             end
             % Load data from *.mat file
             Data = load([filename(1:end-3),'mat']);
-            
             % Check for dual camera data
             if isfield(Data,'cmosData2')
-                %pop-up window for camera choice
-                questdual=questdlg('Please choose a camera', 'Camera Choice', 'Camera1', 'Camera2', 'Camera1');
-                % Load Camera1 data
-                if strcmp(questdual,'Camera1')
-                    handles.cmosData = double(Data.cmosData(:,:,2:end));
-                    handles.bg = double(Data.bgimage);
-                end
-                % Load Camera2 data
-                if strcmp(questdual,'Camera2')
-                    handles.cmosData = double(Data.cmosData2(:,:,2:end));
-                    handles.bg = double(Data.bgimage2);
-                end
-                % Save out the frequency, cameras alternate, divide by 2
-                handles.Fs = double(Data.frequency);
-                % Save out pacing spike. Note: Data.channel1 is not
-                % necessarily the ecg channel. Correspondes to analog1
-                % input to SciMedia box
-                handles.ecg = Data.channel{1}(1:size(Data.channel{1},2)/2)*-1;
+                handles.cmosData = double(Data.cmosData(:,:,2:end));
+                handles.cmosData2 = double(Data.cmosData2(:,:,2:end));
+                handles.bg = double(Data.bgimage);
+                handles.bg2 = double(Data.bgimage2);
             else
-                % Load from single camera
+                 % Load from single camera
                 handles.cmosData = double(Data.cmosData(:,:,2:end));
                 handles.bg = double(Data.bgimage);
                 % Save out pacing spike
@@ -309,8 +311,15 @@ handles.apdC = [];  % variable for storing apd calculations
                 % Save out frequency
                 handles.Fs = double(Data.frequency);
             end
+            % Save out the frequency, cameras alternate, divide by 2
+            handles.Fs = double(Data.frequency);
+            % Save out pacing spike. Note: Data.channel1 is not
+            % necessarily the ecg channel. Correspondes to analog1
+            % input to SciMedia box
+            handles.ecg = Data.channel{1}(1:size(Data.channel{1},2)/2)*-1;
             % Save a variable to preserve  the raw cmos data
             handles.cmosRawData = handles.cmosData;
+            handles.cmosRawData2 = handles.cmosData2;
             % Convert background to grayscale 
             handles.bgRGB = real2rgb(handles.bg, 'gray');
             %%%%%%%%% WINDOWED DATA %%%%%%%%%%
@@ -355,7 +364,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
                 apply_button,bin_popup,filt_popup,drift_popup,play_button,anal_select,...
                 stop_button,dispwave_button,expmov_button,starttimesig_edit,...
-                endtimesig_edit,expwave_button,export_button],'Enable','on')
+                endtimesig_edit,expwave_button,export_button,volt_choice,cal_choice,sig_noise],'Enable','on')
         end
     end
 
@@ -533,6 +542,22 @@ handles.apdC = [];  % variable for storing apd calculations
         end
         
         if check == 1;
+             maxV = max(handles.cmosData(j,i,:));
+             minV = min(handles.cmosData(j,i,:));
+             maxCa = max(handles.cmosData2(j,i,:));
+             minCa = min(handles.cmosData2(j,i,:));
+             if maxV>=maxCa
+                absmax = maxV;
+             else
+                absmax = maxCa;
+             end
+             
+             if minV<=minCa
+                absmin = minV;
+             else
+                absmin = minCa;
+             end
+             
             % Find the correct wave window
             if handles.wave_window == 6
                 handles.wave_window = 1;
@@ -540,31 +565,67 @@ handles.apdC = [];  % variable for storing apd calculations
             wave_window = handles.wave_window;
             switch wave_window
                 case 1
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'b','LineWidth',2,'Parent',signal_scrn1)
+                    axes(signal_scrn1)
+                    V1 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'b','LineWidth',2);
+                    hold on
+                    C1 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[0 0 .4],'LineWidth',2);
+                    set(signal_scrn1,'YLim',[absmin absmax]);
+                    hold off
+                    handles.checkbox{1,1} = V1;
+                    handles.checkbox{2,1} = C1;
                     handles.M(1,:) = [i j];
                 case 2
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'g','LineWidth',2,'Parent',signal_scrn2)
-                    handles.M(2,:) = [i j];
+                    axes(signal_scrn2)
+                    V2 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'g','LineWidth',2,'Parent',signal_scrn2);
+                    hold on
+                    C2 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[0 .4 0],'LineWidth',2,'Parent',signal_scrn2);
+                    set(signal_scrn2,'YLim',[absmin absmax]);
+                    hold off
+                    handles.checkbox{1,2} = V2;
+                    handles.checkbox{2,2} = C2;
+                    handles.M(2,:) = [i j]; 
                 case 3
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'m','LineWidth',2,'Parent',signal_scrn3)
+                    axes(signal_scrn3)
+                    V3 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'m','LineWidth',2,'Parent',signal_scrn3);
+                    hold on
+                    C3 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[.4 0 .4],'LineWidth',2,'Parent',signal_scrn3);
+                    set(signal_scrn3,'YLim',[absmin absmax]);
+                    hold off
+                    handles.checkbox{1,3} = V3;
+                    handles.checkbox{2,3} = C3;
                     handles.M(3,:) = [i j];
                 case 4
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'k','LineWidth',2,'Parent',signal_scrn4)
+                    axes(signal_scrn4)
+                    V4 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'y','LineWidth',2,'Parent',signal_scrn4);
+                    hold on
+                    C4 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[.4 .4 0],'LineWidth',2,'Parent',signal_scrn4);
+                    set(signal_scrn4,'YLim',[absmin absmax]);
+                    hold off
+                    handles.checkbox{1,4} = V4;
+                    handles.checkbox{2,4} = C4;
                     handles.M(4,:) = [i j];
                 case 5
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'c','LineWidth',2,'Parent',signal_scrn5)
+                    axes(signal_scrn5)
+                    V5 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'c','LineWidth',2,'Parent',signal_scrn5);
+                    hold on
+                    C5 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[0 .6 .5],'LineWidth',2,'Parent',signal_scrn5);
+                    set(signal_scrn5,'YLim',[absmin absmax]);
+                    hold off
+                    handles.checkbox{1,5} = V5;
+                    handles.checkbox{2,5} = C5;
                     handles.M(5,:) = [i j];
             end
         end
         handles.wave_window = wave_window + 1; % Dial up the wave window count
         % Update movie screen with new markers
+        axes(movie_scrn)
         cla
+        M = handles.M; colax='bgmyc'; [a,~]=size(M);
         currentframe = handles.frame;
-        drawFrame(currentframe);
-        M = handles.M; colax='bgmkc'; [a,~]=size(M);
+        drawFrame(currentframe)
         hold on
         for x=1:a
-            plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','w','Parent',movie_scrn);
+            plot(handles.M(x,1),handles.M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','k','Parent',movie_scrn);
             set(movie_scrn,'YTick',[],'XTick',[]);% Hide tick markes
         end
         hold off
@@ -741,8 +802,9 @@ handles.apdC = [];  % variable for storing apd calculations
         trackProg = sum(trackProg);
         counter = 0;
         g1 = waitbar(counter,'Conditioning Signal');
-        % Return to raw unfiltered cmos data
+        % Return to raw unfiltered Vm and Ca cmos Data
         cmosData = handles.cmosRawData;
+        cmosData2 = handles.cmosRawData2;
         handles.normflag = 0; % Initialize normflag
         % Condition Signals
         % Remove Background
@@ -767,6 +829,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 bin_size = 3;
             end
             cmosData = binning(cmosData,bin_size);
+            cmosData2 = binning(cmosData2,bin_size);
         end
         % Filter Data
         if filt_state == 1
@@ -792,6 +855,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 hb = 50;
             end
             cmosData = filter_data(cmosData,handles.Fs, or, lb, hb);
+            cmosData2 = filter_data(cmosData2,handles.Fs, or, lb, hb);
         end
         % Remove Drift
         if drift_state == 1
@@ -802,6 +866,7 @@ handles.apdC = [];  % variable for storing apd calculations
             ord_val = get(drift_popup,'Value');
             ord_str = get(drift_popup,'String');
             cmosData = remove_Drift(cmosData,ord_str(ord_val));
+            cmosData2 = remove_Drift(cmosData2,ord_str(ord_val));
         end
         % Normalize Data
         if norm_state == 1
@@ -810,12 +875,14 @@ handles.apdC = [];  % variable for storing apd calculations
             waitbar(counter/trackProg,g1,'Normalizing Data');
             % Normalize data
             cmosData = normalize_data(cmosData,handles.Fs);
+            cmosData2 = normalize_data(cmosData2,handles.Fs);
             handles.normflag = 1;
         end
         % Delete the progress bar 
         delete(g1)
         % Save conditioned signal
         handles.cmosData = cmosData;
+        handles.cmosData2 = cmosData2;
         % Update movie screen with the conditioned data
         set(f,'CurrentAxes',movie_scrn)
         cla
@@ -831,30 +898,62 @@ handles.apdC = [];  % variable for storing apd calculations
         end
         set(movie_scrn,'YTick',[],'XTick',[]);% Hide tick markes
         % Update markers on movie screen
-        M = handles.M;colax='bgmkc';[a,~]=size(M);
+        M = handles.M;colax='bgmyc';[a,~]=size(M);
         hold on
         for x=1:a
-            plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','w','Parent',movie_scrn);
+            plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','k','Parent',movie_scrn);
             set(movie_scrn,'YTick',[],'XTick',[]);% Hide tick markes
         end
         hold off
-        % Update signal waves (yes this is ugly.  if you find a better way, please change)
+        % Update signal waves
         if a>=1
-            plot(handles.time,squeeze(handles.cmosData(M(1,2),M(1,1),:)),'b','LineWidth',2,'Parent',signal_scrn1)
+            axes(signal_scrn1)
+            V1 = plot(handles.time,squeeze(handles.cmosData(M(1,2),M(1,1),:)),'b','LineWidth',2,'Parent',signal_scrn1);
+            hold on
+            C1 = plot(handles.time,squeeze(handles.cmosData2(M(1,2),M(1,1),:)),'Color',[0 0 .4],'LineWidth',2,'Parent',signal_scrn1);
+            hold off
+            handles.checkbox{1,1} = V1;
+            handles.checkbox{2,1} = C1;          
             if a>=2
-                plot(handles.time,squeeze(handles.cmosData(M(2,2),M(2,1),:)),'g','LineWidth',2,'Parent',signal_scrn2)
+                axes(signal_scrn2)
+                V2 = plot(handles.time,squeeze(handles.cmosData(M(2,2),M(2,1),:)),'g','LineWidth',2,'Parent',signal_scrn2);
+                hold on
+                C2 = plot(handles.time,squeeze(handles.cmosData2(M(2,2),M(2,1),:)),'Color',[0 .4 0],'LineWidth',2,'Parent',signal_scrn2);
+                hold off
+                handles.checkbox{1,2} = V2;
+                handles.checkbox{2,2} = C2;
                 if a>=3
-                    plot(handles.time,squeeze(handles.cmosData(M(3,2),M(3,1),:)),'m','LineWidth',2,'Parent',signal_scrn3)
+                    axes(signal_scrn3)
+                    V3 = plot(handles.time,squeeze(handles.cmosData(M(3,2),M(3,1),:)),'m','LineWidth',2,'Parent',signal_scrn3);
+                    hold on
+                    C3 = plot(handles.time,squeeze(handles.cmosData2(M(3,2),M(3,1),:)),'Color',[.4 0 .4],'LineWidth',2,'Parent',signal_scrn3);
+                    hold off
+                    handles.checkbox{1,3} = V3;
+                    handles.checkbox{2,3} = C3;
                     if a>=4
-                        plot(handles.time,squeeze(handles.cmosData(M(4,2),M(4,1),:)),'k','LineWidth',2,'Parent',signal_scrn4)
+                        axes(signal_scrn4)
+                        V4 = plot(handles.time,squeeze(handles.cmosData(M(4,2),M(4,1),:)),'y','LineWidth',2,'Parent',signal_scrn4);
+                        hold on
+                        C4 = plot(handles.time,squeeze(handles.cmosData2(M(4,2),M(4,1),:)),'Color',[.4 .4 0],'LineWidth',2,'Parent',signal_scrn4);
+                        hold off
+                        handles.checkbox{1,4} = V4;
+                        handles.checkbox{2,4} = C4;
                         if a>=5
-                            plot(handles.time,squeeze(handles.cmosData(M(5,2),M(5,1),:)),'c','LineWidth',2,'Parent',signal_scrn5)
+                            axes(signal_scrn5)
+                            V5 = plot(handles.time,squeeze(handles.cmosData(M(5,2),M(5,1),:)),'c','LineWidth',2,'Parent',signal_scrn5);
+                            hold on
+                            C5 = plot(handles.time,squeeze(handles.cmosData2(M(5,2),M(5,1),:)),'Color',[0 .6 .5],'LineWidth',2,'Parent',signal_scrn5);
+                            hold off
+                            handles.checkbox{1,5} = V5;
+                            handles.checkbox{2,5} = C5;
                         end
                     end
                 end
             end
         end
     end
+            
+            
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Data Analysis Selection
@@ -976,7 +1075,49 @@ handles.apdC = [];  % variable for storing apd calculations
              set(starttimemap_edit,'String',0)
          end
      end
- 
+%% Checkbox to manipulate plot on signal screens when VOLTAGE is checked
+    function checkbox_volt(~,~)
+        [n,~] = size(handles.M);
+        i_temp = handles.M(1);
+        j_temp = handles.M(2);
+
+        handles.choice(1,1) = get(volt_choice,'Value'); % gives value of 1 or 0 to indicate voltage checkbox status
+        handles.choice(1,2) = get(cal_choice,'Value'); % gives value of 1 or 0 to indicate calcium checkbox status
+        v1 = handles.choice(1,1);
+        c1 = handles.choice(1,2);
+        %make sure pixel selected is within movie_scrn
+        if i_temp>size(handles.cmosData,1) || j_temp>size(handles.cmosData,2) || i_temp<=1 || j_temp<=1
+            % tell user to pick new pixel
+            msgbox('Warning: Pixel Selection out of Boundary','Title','help')
+        else
+            check = 1;
+        end
+        if check == 1
+            if v1==1 && c1==1
+                for m = 1:n
+                    set(handles.checkbox{1,m},'Visible','on');
+                    set(handles.checkbox{2,m},'Visible','on');
+                end
+            elseif v1==0 && c1==1
+                for m = 1:n
+                    set(handles.checkbox{1,m},'Visible','off');
+                    set(handles.checkbox{2,m},'Visible','on');
+                end
+            elseif v1==1 && c1==0
+                for m = 1:n
+                    set(handles.checkbox{2,m},'Visible','off');
+                    set(handles.checkbox{1,m},'Visible','on');
+                end
+            else
+                for m = 1:n
+                    set(handles.checkbox{1,m},'Visible','off');
+                    set(handles.checkbox{2,m},'Visible','off');
+                end
+            end
+        end
+    end
+
+
 %% Button to create activation map
     function createmap_button_callback(~,~)
         % CHECK ANALYSIS MODE
@@ -1008,8 +1149,18 @@ handles.apdC = [];  % variable for storing apd calculations
             close(gg)
         end
     end
+%% Signal to Noise Ratio Calculation
+   function sig2noise(~,~)
+    cmosRawData = handles.cmosRawData;
+    cmosData = handles.cmosData;
+    noise = cmosRawData - cmosData;
+    signal = cmosData;
+    SNR = signal./noise;
+    imagesc(SNR)
+    colormap(jet)
+   end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
 %% Callback for exporting conditioned signals
 function export_callback(~,~)
     % Choose location to save file and name of file
@@ -1037,6 +1188,6 @@ function export_callback(~,~)
     analog = handles.ecg;
     save(movname,'cmosData','cmosRawData','analog')  
 end
-
 end
+
 
