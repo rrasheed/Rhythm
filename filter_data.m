@@ -1,4 +1,4 @@
-function filt_data = filter_data(data,Fs,or,lb,hb)
+function filt_data = filter_data(data1,Fs,or,lb,hb)
 %% The filter function applies a finite impulse response signal processing
 %  filter to the data using the Parks-McClellan Remez Exchange Algorithm
 
@@ -30,11 +30,11 @@ function filt_data = filter_data(data,Fs,or,lb,hb)
 %     [b,a] = butter(5,Wn); % Example of Butterworth Filter
 %     [b,a] = cheby2(15,20,Wn); % Example of ChebyII Filter
     %% Apply Filter
-    temp = reshape(data,[],size(data,3));
+    temp = reshape(data1,[],size(data1,3));
     filt_temp = zeros(size(temp));
     for i = 1:size(temp,1)
         if sum(temp(i,:)) ~= 0
         filt_temp(i,:) = filtfilt(b,a,temp(i,:)); % needed to create 0 phase offset
         end
     end
-    filt_data = reshape(filt_temp,size(data,1),size(data,2),[]);
+    filt_data = reshape(filt_temp,size(data1,1),size(data1,2),[]);

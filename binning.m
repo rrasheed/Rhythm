@@ -1,4 +1,4 @@
-function [data] = binning(data,N)
+function data1 = binning(data1,N)
 %% The function binning spatially averages CMOS data with using a uniform binning algorithm
 
 %INPUTS
@@ -16,8 +16,8 @@ function [data] = binning(data,N)
 
 %% Code
 avePattern = ones(N,N);
-for i = 1:size(data,3)
-    temp = data(:,:,i);
+for i = 1:size(data1,3)
+    temp = data1(:,:,i);
     temp = 1/N/N*conv2(temp,avePattern,'same');
-    data(:,:,i) = temp;
+    data1(:,:,i) = temp;
 end

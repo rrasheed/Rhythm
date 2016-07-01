@@ -1,4 +1,4 @@
-function new_data = remove_Drift(data,ord_str)
+function new_data = remove_Drift(data1,ord_str)
 %% remove_Drift is a signal conditioning function for signal drift removal
 % new_data = remove_Drfit(data,bg) removes the temporal drift from a pixel
 % in the cmos data by estimating and substracting a nth degree polynomial
@@ -30,15 +30,15 @@ function new_data = remove_Drift(data,ord_str)
 
 % AUTHOR: Jacob Laughner (jacoblaughner@gmail.com)
 %% Code
-tempx = 1:size(data,3);
-tempy = reshape(data,size(data,1)*size(data,2),[]);
+tempx = 1:size(data1,3);
+tempy = reshape(data1,size(data1,1)*size(data1,2),[]);
 temp_ord = ord_str{1};
 ord = str2num(temp_ord(1));
-for i = 1:size(data,1)*size(data,2)
+for i = 1:size(data1,1)*size(data1,2)
     if sum(tempy(i,:)) ~= 0
     [p,s,mu] = polyfit(tempx,tempy(i,:),ord);
     y_poly = polyval(p,tempx,s,mu);
     tempy(i,:) = tempy(i,:) - y_poly;
     end
 end
-new_data = reshape(tempy,size(data,1),size(data,2),size(data,3));
+new_data = reshape(tempy,size(data1,1),size(data1,2),size(data1,3));
