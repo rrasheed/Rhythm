@@ -154,7 +154,9 @@ set([f,p1,filelist,selectdir,refreshdir,loadfile,movie_scrn,movie_slider, signal
     apply_button,bin_popup,filt_popup,drift_popup,export_button,anal_data,anal_select,invert_cmap,starttimemap_text,...
     starttimemap_edit,endtimemap_text,endtimemap_edit,createmap_button,minapd_text,minapd_edit,maxapd_text,maxapd_edit,...
     percentapd_text,percentapd_edit,remove_motion_click,remove_motion_click_txt,calc_apd_button,expwave_button,...
-    starttimesig_text,starttimesig_edit,sig_noise,endtimesig_text,endtimesig_edit],'Units','normalized')
+    starttimesig_text,starttimesig_edit,sig_noise,endtimesig_text,endtimesig_edit, sig_noise,snrslider,snrbutton,snrmin_text,...
+    snrmin_edit,snrmax_text,snrmax_edit],'Units','normalized')
+
 
 % Disable buttons that will not be needed until data is loaded
 set([removeBG_button,bg_thresh_edit,bg_thresh_label,perc_ex_edit,perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
@@ -237,37 +239,87 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
                 handles.M(handles.grabbed,:) = [i_temp j_temp];
                 i = i_temp;
                 j = j_temp;
+                maxV = max(handles.cmosData(j,i,:));
+                minV = min(handles.cmosData(j,i,:));
+                maxCa = max(handles.cmosData2(j,i,:));
+                minCa = min(handles.cmosData2(j,i,:));
+                if maxV>=maxCa
+                    absmax = maxV;
+                else
+                    absmax = maxCa;
+                end
+                
+                if minV<=minCa
+                    absmin = minV;
+                else
+                    absmin = minCa;
+                end
                 switch handles.grabbed
                     case 1
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'b','LineWidth',2,'Parent',signal_scrn1)
+                        axes(signal_scrn1)
+                        V1 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'b','LineWidth',2);
+                        hold on
+                        C1 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[0 0 .4],'LineWidth',2);
+                        set(signal_scrn1,'YLim',[absmin absmax]);
+                        hold off
+                        handles.checkbox{1,1} = V1;
+                        handles.checkbox{2,1} = C1;
                         handles.M(1,:) = [i j];
                     case 2
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'g','LineWidth',2,'Parent',signal_scrn2)
+                        axes(signal_scrn2)
+                        V2 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'g','LineWidth',2,'Parent',signal_scrn2);
+                        hold on
+                        C2 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[0 .4 0],'LineWidth',2,'Parent',signal_scrn2);
+                        set(signal_scrn2,'YLim',[absmin absmax]);
+                        hold off
+                        handles.checkbox{1,2} = V2;
+                        handles.checkbox{2,2} = C2;
                         handles.M(2,:) = [i j];
                     case 3
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'m','LineWidth',2,'Parent',signal_scrn3)
+                        axes(signal_scrn3)
+                        V3 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'m','LineWidth',2,'Parent',signal_scrn3);
+                        hold on
+                        C3 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[.4 0 .4],'LineWidth',2,'Parent',signal_scrn3);
+                        set(signal_scrn3,'YLim',[absmin absmax]);
+                        hold off
+                        handles.checkbox{1,3} = V3;
+                        handles.checkbox{2,3} = C3;
                         handles.M(3,:) = [i j];
                     case 4
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'k','LineWidth',2,'Parent',signal_scrn4)
+                        axes(signal_scrn4)
+                        V4 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'y','LineWidth',2,'Parent',signal_scrn4);
+                        hold on
+                        C4 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[.4 .4 0],'LineWidth',2,'Parent',signal_scrn4);
+                        set(signal_scrn4,'YLim',[absmin absmax]);
+                        hold off
+                        handles.checkbox{1,4} = V4;
+                        handles.checkbox{2,4} = C4;
                         handles.M(4,:) = [i j];
                     case 5
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'c','LineWidth',2,'Parent',signal_scrn5)
+                        axes(signal_scrn5)
+                        V5 = plot(handles.time,squeeze(handles.cmosData(j,i,:)),'c','LineWidth',2,'Parent',signal_scrn5);
+                        hold on
+                        C5 = plot(handles.time,squeeze(handles.cmosData2(j,i,:)),'Color',[0 .6 .5],'LineWidth',2,'Parent',signal_scrn5);
+                        set(signal_scrn5,'YLim',[absmin absmax]);
+                        hold off
+                        handles.checkbox{1,5} = V5;
+                        handles.checkbox{2,5} = C5;
                         handles.M(5,:) = [i j];
                 end
+                axes(movie_scrn)
                 cla
+                M = handles.M; colax='bgmkc'; [a,~]=size(M);
                 currentframe = handles.frame;
                 drawFrame(currentframe);
-                M = handles.M; colax='bgmkc'; [a,~]=size(M);
                 hold on
                 for x=1:a
-                    plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','w','Parent',movie_scrn);
+                    plot(handles.M(x,1),handles.M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','k','Parent',movie_scrn);
                     set(movie_scrn,'YTick',[],'XTick',[]);% Hide tick markes
                 end
                 hold off
             end
         end
     end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% LOAD DATA
@@ -822,6 +874,7 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             bg_thresh = str2double(get(bg_thresh_edit,'String'));
             perc_ex = str2double(get(perc_ex_edit,'String'));
             cmosData = remove_BKGRD(cmosData,handles.bg,bg_thresh,perc_ex);
+            cmosData2 = remove_BKGRD(cmosData2,handles.bg,bg_thresh,perc_ex);
         end
         % Bin Data
         if bin_state == 1
