@@ -46,10 +46,17 @@ f = figure('Name','RHYTHM','Visible','off','Position',[scrn_size(3),scrn_size(4)
 
 % Load Data
 p1 = uipanel('Title','Display Data','FontSize',12,'Position',[.01 .01 .98 .98]);
-filelist = uicontrol('Parent',p1,'Style','listbox','String','Files','Position',[10 440 150 250],'Callback',{@filelist_callback});
-selectdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Select Directory','Position',[10 405 150 30],'Callback',{@selectdir_callback});
-loadfile = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Load','Position',[10 375 150 30],'Callback',{@loadfile_callback});
-refreshdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Refresh Directory','Position',[10 345 150 30],'Callback',{@refreshdir_callback});
+filelist = uicontrol('Parent',p1,'Style','listbox','String','Files','Position',[10 540 150 150],'Callback',{@filelist_callback});
+selectdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Select Directory','Position',[10 505 150 30],'Callback',{@selectdir_callback});
+loadfile = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Load','Position',[10 475 150 30],'Callback',{@loadfile_callback});
+refreshdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Refresh Directory','Position',[10 445 150 30],'Callback',{@refreshdir_callback});
+
+% Check boxes to allow choice of voltage plot, Ca plot, or both
+plot_choice = uibuttongroup('Parent',p1,'Title','Plot Choice','FontSize',12,'Position',[0.01 0.52 .12 .110]);
+volt_choice = uicontrol('Parent',plot_choice,'Style','checkbox','FontSize',12,'String','Plot Voltage','Position',[5 30 165 25],'Callback',@checkbox_volt);
+set(volt_choice, 'Value', 1);
+cal_choice = uicontrol('Parent',plot_choice,'Style','checkbox','FontSize',12,'String','Plot Calcium','Position',[5 10 165 25],'Callback',@checkbox_volt);
+set(cal_choice, 'Value', 1);
 
 % Movie Screen for Optical Data
 movie_scrn = axes('Parent',p1,'Units','Pixels','YTick',[],'XTick',[],'Position',[170, 190, 500,500]);
@@ -108,10 +115,17 @@ set(filt_popup,'Value',3)
 % Optical Action Potential Analysis Button Group and Buttons
 % Create Button Group
 anal_data = uibuttongroup('Parent',p1,'Title','Analyze Data','FontSize',12,'Position',[0.275 0.015 .270 .180]);
-
 anal_select = uicontrol('Parent',anal_data,'Style','popupmenu','FontSize',12,'String',{'-----','Activation','Conduction','APD','Phase','Dominant Frequency'},'Position',[5 85 165 25],'Callback',{@anal_select_callback});
 
-sig_noise = uicontrol('Parent', p1,'Style','pushbutton','FontSize',12,'String','Calculate SNR', 'Position',[10 145 150 30],'Callback',{@sig2noise});
+% Signal to Noise Ratio Button Group and Buttons
+sig_noise = uibuttongroup('Parent',p1,'Title','Signal to Noise', 'FontSize',12,'Position',[0.01 0.2 .12 .310]);
+snrslider = uicontrol('Parent', sig_noise,'Style','slider', 'Position',[10 160 125 10]);
+snrbutton = uicontrol('Parent', sig_noise, 'Style', 'pushbutton', 'String', 'Calculate SNR','Position', [10 120 125 30],'Callback',{@sig2noise});
+snrmin_text = uicontrol('Parent',sig_noise,'Style','text','FontSize',12,'String','Min:','Position',[1 90 57 25],'Visible','on');
+snrmin_edit = uicontrol('Parent',sig_noise,'Style','edit','FontSize',12,'Position',[44 96 57 20],'Visible','on');
+snrmax_text = uicontrol('Parent',sig_noise,'Style','text','FontSize',12,'String','Max:','Position',[1 57 57 25],'Visible','on');
+snrmax_edit = uicontrol('Parent',sig_noise,'Style','edit','FontSize',12,'Position',[44 65 57 20],'Visible','on');
+
 
 % Invert Color Map Option
 invert_cmap = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',12,'String','Invert Colormaps','Position',[175 88 150 25],'Visible','on','Callback',{@invert_cmap_callback});
@@ -132,13 +146,6 @@ percentapd_edit= uicontrol('Parent',anal_data,'Style','edit','FontSize',12,'Stri
 remove_motion_click = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',12,'String','Remove','Visible','on','Position',[230 35 100 25]);
 remove_motion_click_txt = uicontrol('Parent',anal_data,'Style','text','FontSize',12,'String','Motion','Visible','on','Position',[248 15 50 25]);
 calc_apd_button = uicontrol('Parent',anal_data,'Style','pushbutton','FontSize',12,'String','Regional APD','Position',[125 2 103 30],'Callback',{@calc_apd_button_callback});
-
-% Check boxes to allow choice of voltage plot, Ca plot, or both
-plot_choice = uibuttongroup('Parent',p1,'Title','Plot Choice','FontSize',12,'Position',[0.01 0.32 .12 .160]);
-volt_choice = uicontrol('Parent',plot_choice,'Style','checkbox','FontSize',12,'String','Plot Voltage','Position',[5 60 165 25],'Callback',@checkbox_volt);
-set(volt_choice, 'Value', 1);
-cal_choice = uicontrol('Parent',plot_choice,'Style','checkbox','FontSize',12,'String','Plot Calcium','Position',[5 30 165 25],'Callback',@checkbox_volt);
-set(cal_choice, 'Value', 1);
   
 % Allow all GUI structures to be scaled when window is dragged
 set([f,p1,filelist,selectdir,refreshdir,loadfile,movie_scrn,movie_slider, signal_scrn1,signal_scrn2,signal_scrn3,...
@@ -154,7 +161,7 @@ set([removeBG_button,bg_thresh_edit,bg_thresh_label,perc_ex_edit,perc_ex_label,b
     apply_button,bin_popup,filt_popup,drift_popup,anal_select,starttimemap_edit,starttimemap_text,endtimemap_edit,endtimemap_text,...
     createmap_button,minapd_edit,minapd_text,maxapd_edit,maxapd_text,percentapd_edit,percentapd_text,remove_motion_click,remove_motion_click_txt,...
     calc_apd_button,play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,endtimesig_edit,expwave_button,loadfile,...
-    refreshdir,invert_cmap,export_button,volt_choice,cal_choice,sig_noise],'Enable','off')
+    refreshdir,invert_cmap,export_button,volt_choice,cal_choice],'Enable','off')
 
 % Hide all analysis buttons
 set([invert_cmap,starttimemap_text,starttimemap_edit,endtimemap_text,...
@@ -364,7 +371,7 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
                 perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
                 apply_button,bin_popup,filt_popup,drift_popup,play_button,anal_select,...
                 stop_button,dispwave_button,expmov_button,starttimesig_edit,...
-                endtimesig_edit,expwave_button,export_button,volt_choice,cal_choice,sig_noise],'Enable','on')
+                endtimesig_edit,expwave_button,export_button,volt_choice,cal_choice],'Enable','on')
         end
     end
 
@@ -956,6 +963,31 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Signal to Noise Ratio Fuctionality
+%% Create SNR Map
+function sig2noise(~,~)
+    cmosRawData = handles.cmosRawData;
+    cmosData = handles.cmosData;
+    noise = cmosRawData - cmosData;
+    signal = cmosData;
+    SNR = snr(signal,noise);
+    handles.SNR = SNR;
+
+    end
+
+
+
+
+
+
+
+
+
+
+
+
+
 %% Data Analysis Selection
     function anal_select_callback(~,~)
         % Get the type of analysis
@@ -1149,16 +1181,6 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             close(gg)
         end
     end
-%% Signal to Noise Ratio Calculation
-   function sig2noise(~,~)
-    cmosRawData = handles.cmosRawData;
-    cmosData = handles.cmosData;
-    noise = cmosRawData - cmosData;
-    signal = cmosData;
-    SNR = signal./noise;
-    imagesc(SNR)
-    colormap(jet)
-   end
 
         
 %% Callback for exporting conditioned signals
