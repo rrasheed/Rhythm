@@ -119,13 +119,14 @@ anal_select = uicontrol('Parent',anal_data,'Style','popupmenu','FontSize',12,'St
 
 % Signal to Noise Ratio Button Group and Buttons
 sig_noise = uibuttongroup('Parent',p1,'Title','Signal to Noise', 'FontSize',12,'Position',[0.01 0.2 .12 .310]);
-snrslider = uicontrol('Parent', sig_noise,'Style','slider', 'Position',[10 160 125 10]);
-snrbutton = uicontrol('Parent', sig_noise, 'Style', 'pushbutton', 'String', 'Calculate SNR','Position', [10 120 125 30],'Callback',{@sig2noise});
+snrslider = uicontrol('Parent', sig_noise,'Style','slider', 'Position',[10 180 125 10]);
+snrbutton = uicontrol('Parent', sig_noise, 'Style', 'pushbutton', 'String', 'Calculate SNR','Position', [10 130 125 30],'Callback',{@sig2noise});
 snrmin_text = uicontrol('Parent',sig_noise,'Style','text','FontSize',12,'String','Min:','Position',[1 90 57 25],'Visible','on');
 snrmin_edit = uicontrol('Parent',sig_noise,'Style','edit','FontSize',12,'Position',[44 96 57 20],'Visible','on');
 snrmax_text = uicontrol('Parent',sig_noise,'Style','text','FontSize',12,'String','Max:','Position',[1 57 57 25],'Visible','on');
 snrmax_edit = uicontrol('Parent',sig_noise,'Style','edit','FontSize',12,'Position',[44 65 57 20],'Visible','on');
-
+snrcal = uicontrol('Parent',sig_noise,'Style','checkbox','FontSize',12,'String','Calcium Map','Position',[10 30 150 25]);
+snrvolt = uicontrol('Parent',sig_noise,'Style','checkbox','FontSize',12,'String','Voltage Map','Position',[10 5 150 25]);
 
 % Invert Color Map Option
 invert_cmap = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',12,'String','Invert Colormaps','Position',[175 88 150 25],'Visible','on','Callback',{@invert_cmap_callback});
@@ -154,8 +155,8 @@ set([f,p1,filelist,selectdir,refreshdir,loadfile,movie_scrn,movie_slider, signal
     apply_button,bin_popup,filt_popup,drift_popup,export_button,anal_data,anal_select,invert_cmap,starttimemap_text,...
     starttimemap_edit,endtimemap_text,endtimemap_edit,createmap_button,minapd_text,minapd_edit,maxapd_text,maxapd_edit,...
     percentapd_text,percentapd_edit,remove_motion_click,remove_motion_click_txt,calc_apd_button,expwave_button,...
-    starttimesig_text,starttimesig_edit,sig_noise,endtimesig_text,endtimesig_edit, sig_noise,snrslider,snrbutton,snrmin_text,...
-    snrmin_edit,snrmax_text,snrmax_edit],'Units','normalized')
+    starttimesig_text,starttimesig_edit,endtimesig_text,endtimesig_edit, sig_noise,snrslider,snrbutton,snrmin_text,...
+    snrmin_edit,snrmax_text,snrmax_edit,snrcal,snrvolt],'Units','normalized')
 
 
 % Disable buttons that will not be needed until data is loaded
@@ -163,7 +164,8 @@ set([removeBG_button,bg_thresh_edit,bg_thresh_label,perc_ex_edit,perc_ex_label,b
     apply_button,bin_popup,filt_popup,drift_popup,anal_select,starttimemap_edit,starttimemap_text,endtimemap_edit,endtimemap_text,...
     createmap_button,minapd_edit,minapd_text,maxapd_edit,maxapd_text,percentapd_edit,percentapd_text,remove_motion_click,remove_motion_click_txt,...
     calc_apd_button,play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,endtimesig_edit,expwave_button,loadfile,...
-    refreshdir,invert_cmap,export_button,volt_choice,cal_choice],'Enable','off')
+    refreshdir,invert_cmap,export_button,volt_choice,cal_choice,snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,snrmax_edit,...
+    snrcal,snrvolt],'Enable','off')
 
 % Hide all analysis buttons
 set([invert_cmap,starttimemap_text,starttimemap_edit,endtimemap_text,...
@@ -874,7 +876,10 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             bg_thresh = str2double(get(bg_thresh_edit,'String'));
             perc_ex = str2double(get(perc_ex_edit,'String'));
             cmosData = remove_BKGRD(cmosData,handles.bg,bg_thresh,perc_ex);
+            handles.foregnd = cmosData;
             cmosData2 = remove_BKGRD(cmosData2,handles.bg,bg_thresh,perc_ex);
+            set([snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,...
+                snrmax_edit,snrcal,snrvolt],'Enable','on');
         end
         % Bin Data
         if bin_state == 1
@@ -916,6 +921,11 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             end
             cmosData = filter_data(cmosData,handles.Fs, or, lb, hb);
             cmosData2 = filter_data(cmosData2,handles.Fs, or, lb, hb);
+            if removeBG_state == 1 && norm_state == 0
+                handles.sig = cmosData;
+                set([snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,...
+                snrmax_edit,snrcal,snrvolt],'Enable','on');
+            end
         end
         % Remove Drift
         if drift_state == 1
@@ -1018,14 +1028,14 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Signal to Noise Ratio Fuctionality
-%% Create SNR Map
+%% Create SNR Matrix
 function sig2noise(~,~)
-    cmosRawData = handles.cmosRawData;
-    cmosData = handles.cmosData;
-    noise = cmosRawData - cmosData;
-    signal = cmosData;
-    SNR = snr(signal,noise);
-    handles.SNR = SNR;
+    handles.foregnd = forgnd;
+    handles.signal = signal;
+    handles.noise = forgnd - signal;
+    noise = handles.noise;
+    handles.snr = snr_calc(signal,noise);
+    
 
     end
 
@@ -1261,7 +1271,7 @@ function export_callback(~,~)
     cmosRawData = handles.cmosRawData;
     cmosData = handles.cmosData;
     analog = handles.ecg;
-    save(movname,'cmosData','cmosRawData','analog')  
+    save(movname,'cmosData','cmosRawData','analog')
 end
 end
 
