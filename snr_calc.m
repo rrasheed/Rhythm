@@ -34,13 +34,7 @@ function new_data = snr_calc(signal,noise)
 % Author: Rayhaan Rasheed (rrasheed@gwmail.gwu.edu)
 
 %% Method 1
-[a,b,c] = size(signal);
-for x = 1:a
-    for y = 1:b
-        sumsig = sum(signal(x,y,:));
-    end
-end
-avgsig = sumsig./c;
+avgsig = mean(signal,3);
 stdnoise = std(noise,[],3);
 snr = avgsig./stdnoise;
 new_data = snr;

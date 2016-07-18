@@ -63,6 +63,7 @@ movie_scrn = axes('Parent',p1,'Units','Pixels','YTick',[],'XTick',[],'Position',
 
 % Movie Slider for Controling Current Frame
 movie_slider = uicontrol('Parent',f, 'Style', 'slider','Position', [183, 180, 502, 20],'SliderStep',[.001 .01],'Callback',{@movieslider_callback});
+
 addlistener(movie_slider,'ContinuousValueChange',@movieslider_callback);
 
 % Mouse Listening Function
@@ -876,10 +877,7 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             bg_thresh = str2double(get(bg_thresh_edit,'String'));
             perc_ex = str2double(get(perc_ex_edit,'String'));
             cmosData = remove_BKGRD(cmosData,handles.bg,bg_thresh,perc_ex);
-            handles.foregnd = cmosData;
-            cmosData2 = remove_BKGRD(cmosData2,handles.bg,bg_thresh,perc_ex);
-            set([snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,...
-                snrmax_edit,snrcal,snrvolt],'Enable','on');
+            cmosData2 = remove_BKGRD(cmosData2,handles.bg,bg_thresh,perc_ex);    
         end
         % Bin Data
         if bin_state == 1
@@ -894,7 +892,7 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
                 bin_size = 3;
             end
             cmosData = binning(cmosData,bin_size);
-            cmosData2 = binning(cmosData2,bin_size);
+            cmosData2 = binning(cmosData2,bin_size); 
         end
         % Filter Data
         if filt_state == 1
@@ -920,12 +918,7 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
                 hb = 50;
             end
             cmosData = filter_data(cmosData,handles.Fs, or, lb, hb);
-            cmosData2 = filter_data(cmosData2,handles.Fs, or, lb, hb);
-            if removeBG_state == 1 && norm_state == 0
-                handles.sig = cmosData;
-                set([snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,...
-                snrmax_edit,snrcal,snrvolt],'Enable','on');
-            end
+            cmosData2 = filter_data(cmosData2,handles.Fs, or, lb, hb); 
         end
         % Remove Drift
         if drift_state == 1
@@ -948,7 +941,23 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             cmosData2 = normalize_data(cmosData2,handles.Fs);
             handles.normflag = 1;
         end
-        % Delete the progress bar 
+        % Activate the SNR tools
+        if removeBG_state == 1 && bin_state == 1 && filt_state == 1 && drift_state == 1
+            handles.foregnd = cmosData;
+            r = 1;
+            if norm_state == 1
+                handles.foregnd = cmosData;
+                r = 1;
+            end
+        else
+            r = 0;
+        end
+        % Keep SNR tools on only when signal conditioning is active
+        while r == 1
+           set([snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,...
+                snrmax_edit,snrcal,snrvolt],'Enable','on'); 
+        end
+        % Delete the progress bar
         delete(g1)
         % Save conditioned signal
         handles.cmosData = cmosData;
@@ -983,7 +992,7 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             C1 = plot(handles.time,squeeze(handles.cmosData2(M(1,2),M(1,1),:)),'Color',[0 0 .4],'LineWidth',2,'Parent',signal_scrn1);
             hold off
             handles.checkbox{1,1} = V1;
-            handles.checkbox{2,1} = C1;          
+            handles.checkbox{2,1} = C1;
             if a>=2
                 axes(signal_scrn2)
                 V2 = plot(handles.time,squeeze(handles.cmosData(M(2,2),M(2,1),:)),'g','LineWidth',2,'Parent',signal_scrn2);
@@ -1022,7 +1031,7 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             end
         end
     end
-            
+
             
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1030,13 +1039,16 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
 %% Signal to Noise Ratio Fuctionality
 %% Create SNR Matrix
 function sig2noise(~,~)
-    handles.foregnd = forgnd;
-    handles.signal = signal;
-    handles.noise = forgnd - signal;
-    noise = handles.noise;
-    handles.snr = snr_calc(signal,noise);
+    foregnd = handles.foregnd;
+    [~,ampsig] = findpeaks(foregnd,'MinPeakHeight',0);
+% %     handles.noise = foregnd - signal;
+% %     noise = handles.noise;
+% %     handles.snr = snr_calc(signal,noise);
+% %     handles.rms = snr_calc_RMS(signal,noise);
     
-
+    
+    
+    
     end
 
 
