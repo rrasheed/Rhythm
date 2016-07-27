@@ -13,6 +13,9 @@ close all
 % I made modficiations following the if statement at line 73 so I could get
 % out axes values. 
 %
+% July 12, 2016 - added a save and load button so I don't have to start
+% from scratch if I've done assignment of calibration points before.
+%
 %% Create GUI structure
 % scrnSize = get(0,'ScreenSize');
 pR = figure('Name','FUDGE IT 2.0','Visible','off',...
@@ -67,9 +70,9 @@ calibType = uicontrol('Parent',pR,'Style','popupmenu','Position',[450 90 110 20]
 calibCameraTxt = uicontrol('Parent',pR,'Style','text','FontSize',12,'String',...
     'Camera Type: ','HorizontalAlignment','Left','Position',[20 30 95 20]);
 calibCameraType = uicontrol('Parent',pR,'Style','popupmenu','FontSize',12,...
-    'String',{'---','watec_with_f8.5 (pig)','watec_with_f12.5 (rabbit)',...
-    'E4300','interpolated_dalsa','iDS_UI_3220CP-M-GL_with_f1.2'},'Position',...
-    [140 30 230 20]);
+    'String',{'---','iDS_UI_3220CP-M-GL_with_f1.2','brainvision_ultimaL',...
+    'watec_with_f8.5 (pig)','watec_with_f12.5 (rabbit)','E4300',...
+    'interpolated_dalsa'},'Position',[140 30 230 20]);
 calibrate = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
     'String','Calibrate','Position',[375 30 100 20],'Callback',{@calibrate_callback});
 calPtEdit = uicontrol('Parent',pR,'Style','edit','FontSize',12,...
@@ -80,6 +83,10 @@ calPtDec = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
     'String',char(8592),'Position',[615 90 40 20],'Callback',{@calPtDec_callback});
 calPtSel = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
     'String','Select','Position',[750 90 70 20],'Callback',{@calPtSel_callback});
+calPtLoad = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
+    'String','Load','Position',[750 60 70 20],'Callback',{@calPtLoad_callback});
+calPtSave = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
+    'String','Save','Position',[825 60 70 20],'Callback',{@calPtSave_callback});
 calPtClear = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
     'String','Clear','Position',[825 90 70 20],'Callback',{@calPtClear_callback});
 calPtFinish = uicontrol('Parent',pR,'Style','pushbutton','FontSize',12,...
@@ -103,7 +110,7 @@ set([pR,globalView,regionalView,calibrationPts,qualityPts,calibBlockText,...
     calibrate,dirSelect,dirName,calPtEdit,calPtInc,calPtDec,calPtSel,...
     unitNormEdit,unitNormTxt,positionEdit,positionTxt,calPtClear,calPtFinish,...
     msgCenterTxt,msgCenterContent,calibCameraTxt,calibCameraType,calibType,...
-    calibTypeTxt],'Units','normalized')
+    calibTypeTxt,calPtSave,calPtLoad],'Units','normalized')
 
 % Center GUI on screen
 movegui(pR,'center')
@@ -116,29 +123,9 @@ handles.method = 2;
 handles.expDir = []; % experimental directory
 handles.speciesID = 0; % experimental species
 handles.species = [];
-handles.angle = [45 135 225 315];
-handles.anum = cell(length(handles.angle),1); %identify image positions that correspond to chosen angles
-for m = 1:length(handles.angle)
-    if handles.angle(m)==0
-        handles.anum{m}='000';
-    elseif handles.angle(m)==45
-        handles.anum{m}='009';
-    elseif handles.angle(m)==90
-        handles.anum{m}='018';
-    elseif handles.angle(m)==135
-        handles.anum{m}='027';
-    elseif handles.angle(m)==180
-        handles.anum{m}='036';
-    elseif handles.angle(m)==225
-        handles.anum{m}='045';
-    elseif handles.angle(m)==270
-        handles.anum{m}='054';
-    elseif handles.angle(m)==315
-        handles.anum{m}='063';
-    end
-end
-handles.plane1fname = cell(4,1);
-handles.plane2fname = cell(4,1);
+handles.angle = [45 45 315 225 135]; % the mapping cameras are currently labeled CW
+handles.plane1fname = [];
+handles.plane2fname = [];
 handles.data = [];                  % calibration data
 handles.calStep = 1;                % calibration index value
 handles.xi = [];                    % x positions of the calibration points
@@ -189,102 +176,94 @@ handles.CMOScams = 'ABCD';
     function calibrate_callback(~,~)
         % select the calibration file
         [handles.calfilename,handles.calpathname] = uigetfile('*.tiff','Pick calibration file.');
-        a = imread([handles.calpathname handles.calfilename]);
-        handles.a=a(:,:,1);
-        handles.aInfo = imfinfo([handles.calpathname handles.calfilename]);
-        % plane 1 calibration filenames
-        CT = get(calibType,'Value');
-        calibNum = 4;
-        if CT ~= 1
+        if handles.calfilename ~= 0
+            % load calibration image
+            a = imread([handles.calpathname handles.calfilename]);
+            handles.a=a(:,:,1);
+            handles.aInfo = imfinfo([handles.calpathname handles.calfilename]);
+            
+            % plane 1 calibration filenames
+            CT = get(calibType,'Value');
             calibNum = 1;
-%             CT = CT-1;
-        end
-        [plane1fname,plane2fname] = getCalibInfo(CT);
-        handles.plane1fname = plane1fname;
-        handles.plane2fname = plane2fname;
-%         plane1fname{1} = 'calpts2_negY.txt';
-%         plane1fname{2} = 'calpts2_posX.txt';
-%         plane1fname{3} = 'calpts2_posY.txt';
-%         plane1fname{4} = 'calpts2_negX.txt';
-%         % plane 2 calibration files
-%         plane2fname{1} = 'calpts2_negX.txt';
-%         plane2fname{2} = 'calpts2_negY.txt';
-%         plane2fname{3} = 'calpts2_posX.txt';
-%         plane2fname{4} = 'calpts2_posY.txt';
-        % create calibration point variables
-        calpts1 = cell(length(handles.angle),1);
-        calpts2 = cell(length(handles.angle),1);
-        handles.calpts_nd = cell(length(handles.angle),1);
-        for n = 1:calibNum
+
+            % create filenames for calibration block locations and normals
+            [plane1fname,plane2fname] = getCalibInfo(CT);
+            handles.plane1fname = plane1fname;
+            handles.plane2fname = plane2fname;
+
+            % create calibration point variables
+            handles.calpts_nd = [];
+            
+            % load calibration block files
             fid=fopen(sprintf('/Users/Chris/Documents/MATLAB/Panoramic/Calibrate/calpts/%s/%s',...
-                handles.species,plane1fname{n}));
+                handles.species,plane1fname));
             if fid~=-1
                 fclose(fid);
-                fprintf('Loading %s ...\n',handles.plane1fname{n});
-                calpts1{n}=load(sprintf('/Users/Chris/Documents/MATLAB/Panoramic/Calibrate/calpts/%s/%s',...
-                    handles.species,plane1fname{n}));
+                fprintf('Loading %s ...\n',handles.plane1fname);
+                calpts1=load(sprintf('/Users/Chris/Documents/MATLAB/Panoramic/Calibrate/calpts/%s/%s',...
+                    handles.species,plane1fname));
             else
-                fprintf('Could not load %s!',plane1fname{n});
+                fprintf('Could not load %s!',plane1fname);
                 return
             end
             fid=fopen(sprintf('/Users/Chris/Documents/MATLAB/Panoramic/Calibrate/calpts/%s/%s',...
-                handles.species,plane2fname{n}));
+                handles.species,plane2fname));
             if fid~=-1
                 fclose(fid);
-                fprintf('Loading %s ...\n',plane2fname{n});
-                calpts2{n}=load(sprintf('/Users/Chris/Documents/MATLAB/Panoramic/Calibrate/calpts/%s/%s',...
-                    handles.species,plane2fname{n}));
+                fprintf('Loading %s ...\n',plane2fname);
+                calpts2=load(sprintf('/Users/Chris/Documents/MATLAB/Panoramic/Calibrate/calpts/%s/%s',...
+                    handles.species,plane2fname));
             else
-                fprintf('Could not load %s\n!',plane2fname{n});
+                fprintf('Could not load %s\n!',plane2fname);
                 return
             end
-            handles.calpts_nd{n}=[calpts1{n};calpts2{n}];       % nondimensional calibration point positions in cube basis
+            handles.calpts_nd = [calpts1;calpts2];       % nondimensional calibration point positions in cube basis
+            % Preallocate the data variable
+            handles.data = zeros(size(handles.calpts_nd,1),8);
+            
+            % Update unit normal and Position fields
+            set(unitNormEdit,'String',['[' num2str(handles.calpts_nd(1,1))...
+                ',' num2str(handles.calpts_nd(1,2)) ',' ...
+                num2str(handles.calpts_nd(1,3)) ']'])
+            set(positionEdit,'String',['[' num2str(handles.calpts_nd(1,4))...
+                ',' num2str(handles.calpts_nd(1,5)) ',' ...
+                num2str(handles.calpts_nd(1,6)) ']'])
+            
+            % Preallocate xi and yi calibration coordinate variables
+            handles.xi = zeros(size(handles.calpts_nd,1),1);
+            handles.yi = zeros(size(handles.calpts_nd,1),1);
+            handles.calibTxt = cell(length(handles.xi),1);
+            handles.calibXi = zeros(size(handles.calpts_nd,1),1);
+            handles.calibYi = zeros(size(handles.calpts_nd,1),1);
+            
+            % Launch calibration images
+            axes(globalView)
+            handles.A = image(handles.a);
+            colormap('gray')
+            set(globalView,'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[])
+            title('Global View','FontSize',12)
+            axes(regionalView)
+            set(regionalView,'Color',[0.5 0.5 0.5])
+            title('Regional View','FontSize',12)
+            axes(calibrationPts)
+            image(handles.a)
+            set(calibrationPts,'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[])
+            title('Calibration Points','FontSize',12)
+            colormap('gray')
+            axes(qualityPts)
+            image(handles.a)
+            set(qualityPts,'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[])
+            colormap('gray')
+            title('Quality Control','FontSize',12)
         end
-        % Preallocate the data variable
-        handles.data = zeros(size(handles.calpts_nd{1},1),8);
-        
-        % Update unit normal and Position fields
-        set(unitNormEdit,'String',['[' num2str(handles.calpts_nd{1}(1,1))...
-            ',' num2str(handles.calpts_nd{1}(1,2)) ',' ...
-            num2str(handles.calpts_nd{1}(1,3)) ']'])
-        set(positionEdit,'String',['[' num2str(handles.calpts_nd{1}(1,4))...
-            ',' num2str(handles.calpts_nd{1}(1,5)) ',' ...
-            num2str(handles.calpts_nd{1}(1,6)) ']'])
-        
-        % Preallocate xi and yi calibration coordinate variables
-        handles.xi = zeros(size(handles.calpts_nd{1},1),1);
-        handles.yi = zeros(size(handles.calpts_nd{1},1),1);
-        handles.calibTxt = cell(length(handles.xi),1);
-        handles.calibXi = zeros(size(handles.calpts_nd{1},1),1);
-        handles.calibYi = zeros(size(handles.calpts_nd{1},1),1);
-        
-        % Launch calibration images
-        axes(globalView)
-        handles.A = image(handles.a);
-        colormap('gray')
-        set(globalView,'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[])        
-        title('Global View','FontSize',12)
-        axes(regionalView)
-        set(regionalView,'Color',[0.5 0.5 0.5])
-        title('Regional View','FontSize',12)
-        axes(calibrationPts)
-        image(handles.a)
-        set(calibrationPts,'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[])
-        title('Calibration Points','FontSize',12)
-        colormap('gray')
-        axes(qualityPts)
-        image(handles.a)
-        set(qualityPts,'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[])
-        colormap('gray')
-        title('Quality Control','FontSize',12)
     end
 
 %% Increment Calibration Number
     function calPtInc_callback(~,~)
         % Increment number
         step = handles.calStep;
-        calpts = handles.calpts_nd{1};
-        if step == size(handles.calpts_nd{1},1)
+        calpts = handles.calpts_nd;
+        if step == size(handles.calpts_nd,1)
             step = 1;
             set(calPtEdit,'String',num2str(step))
         else
@@ -319,9 +298,9 @@ handles.CMOScams = 'ABCD';
     function calPtDec_callback(~,~)
         % Increment number
         step = handles.calStep;
-        calpts = handles.calpts_nd{1};
+        calpts = handles.calpts_nd;
         if step == 1
-            step = size(handles.calpts_nd{1},1);
+            step = size(handles.calpts_nd,1);
             set(calPtEdit,'String',num2str(step))
         else
             step = step-1;
@@ -363,7 +342,7 @@ handles.CMOScams = 'ABCD';
         else
             step = str2double(val);
             handles.calStep = step;
-            calpts = handles.calpts_nd{1};
+            calpts = handles.calpts_nd;
             
             % Update Unit Normals and Position fields
             set(unitNormEdit,'String',['[' num2str(calpts(step,1)) ',' ...
@@ -644,10 +623,8 @@ handles.CMOScams = 'ABCD';
         hold off
         
         % Save out the calibartion information
-        handles.data(step,:)=[handles.calpts_nd{1}(step,4:6) xi yi...
-            handles.calpts_nd{1}(step,1:3)];
-%         tmp = sprintf('handles.data%s=data;',handles.anum{1});
-%         eval(tmp)
+        handles.data(step,:)=[handles.calpts_nd(step,4:6) xi yi...
+            handles.calpts_nd(step,1:3)];
        
     end
 
@@ -702,13 +679,17 @@ handles.CMOScams = 'ABCD';
         ind = unique(ind);
         ind = ind(2:end);
         hold on
-        scatter(handles.xi(ind)+0.5,handles.yi(ind)+0.5,'ro')
+        scatter(handles.xi(ind),handles.yi(ind),'ro')
         hold off
         
     end
 
 %% Calibration Finish %%
     function calPtFinish_callback(~,~)
+        % grab current directory
+        cDir = pwd;
+        % change to experimental directory
+        cd(handles.expDir)
         % Remove zeros from data
         tmp = handles.data(:,4) ~= 0;
         tmp = tmp.*(1:size(handles.data,1))';
@@ -717,28 +698,8 @@ handles.CMOScams = 'ABCD';
             tmp = tmp(2:end);
             handles.data = handles.data(tmp,:);
         end
-        
-        % The current method is to replicate the analysis of the first
-        % camera to the other 3 camera positions (placed in 90 degree
-        % intervals).
-        calibNum = 4;
-        whichCMOS = [];
-        if get(calibType,'Value') ~= 1
-            calibNum = 1;
-            whichCMOS = get(calibType,'Value')-1;
-            handles.anum{2} = '063';
-            handles.anum{4} = '027';
-        end
-        
-        dataAll = zeros(size(handles.data,1),size(handles.data,2),calibNum);
-        for n = 1:calibNum
-            if n == 1
-                dataAll(:,:,1) = handles.data;
-            else
-                dataAll(:,:,n) = [handles.calpts_nd{n}(tmp,4:6) handles.data(:,4:5) ...
-                    handles.calpts_nd{n}(tmp,1:3)];                
-            end
-        end
+            
+        dataAll = handles.data;
                     
         % preallocate variables
         par = [];
@@ -747,68 +708,62 @@ handles.CMOScams = 'ABCD';
         res = [];
         er = [];
         C = [];
-        success = [];
         % grab the camera calibration spacing
         calselect = get(calibBlock,'Value');
         % conversion of units to mm
-        for n = 1:calibNum
-            if calselect == 2
-                dataAll(:,1:3,n) = dataAll(:,1:3,n)*(25.4*3/8);
-            elseif calselect == 3
-                dataAll(:,1:3,n) = dataAll(:,1:3,n)*(25.4*1/4);
-            elseif calselect == 4
-                dataAll(:,1:3,n) = dataAll(:,1:3,n)*(25.4*0.6);
-            end
+        if calselect == 2
+            dataAll(:,1:3) = dataAll(:,1:3)*(25.4*3/8);
+        elseif calselect == 3
+            dataAll(:,1:3) = dataAll(:,1:3)*(25.4*1/4);
+        elseif calselect == 4
+            dataAll(:,1:3) = dataAll(:,1:3)*(25.4*0.6);
         end
-        
+      
         % save out calibration
         camNum = get(calibCameraType,'Value');
         camera = get(calibCameraType,'String');
         camera = camera{camNum};
         a = handles.a;
-        ang = handles.angle;
+        calibVal = get(calibType,'Value');
+        ang = handles.angle(calibVal);
         cwtxt = handles.calibDirect;
-        for n = 1:calibNum
-            calpts_nondim = handles.calpts_nd{n};
-            data = dataAll(:,:,n);
-            ang = handles.angle(n);
-            % calculate calibration
-            [par,pos,iter,res,er,C,~]=cacal(camera,dataAll(:,:,n));
-            if n == 1
-                pr = par;
-                ps = pos;
-            end
-            if get(calibType,'Value') == 1
-                savecommand = ['save cal_' num2str(handles.anum{n}) '.mat a '...
-                    'calpts_nondim par pos iter res er C data camera ang cwtxt'];
-            else
-                savecommand = ['save cal' handles.CMOScams(whichCMOS) '_' num2str(handles.anum{whichCMOS})...
-                    '.mat a calpts_nondim par pos iter res er C data camera ang cwtxt'];
-            end
-            eval(savecommand)
-            
-            %-----------------------------------------
-            % Calibrate
-            if n == 1
-                [Xi,Yi]=pred(dataAll(:,1:3,1),pr,ps,camera);
-            end
-            
-            % Save calibration parameters
-            if isempty(whichCMOS)
-                posparfname = sprintf('cal_%s.pospar',handles.anum{n});
-            else
-                posparfname = sprintf('cal%s_%s.pospar',handles.CMOScams(whichCMOS),handles.anum{whichCMOS});
-            end
-            posparfid=fopen(posparfname,'w');
-            for i=1:6
-                fprintf(posparfid,'%15e\n',pos(i));
-            end
-            for i=1:8
-                fprintf(posparfid,'%15e\n',par(i));
-            end
-            fclose(posparfid);
-        end
         
+        calpts_nondim = handles.calpts_nd;
+        data = dataAll;
+        % calculate calibration
+        [par,pos,iter,res,er,C,~]=cacal(camera,dataAll);
+        % camera parameters
+        pr = par;
+        ps = pos;
+        % save out parameters
+        if get(calibType,'Value') == 1
+            savecommand = 'save calGeo_%1.3d a calpts_nondim par pos iter res er C data camera ang cwtxt';
+            savecommand = sprintf(savecommand,ang);
+        else
+            savecommand = 'save cal%s_%1.3d a calpts_nondim par pos iter res er C data camera ang cwtxt';
+            savecommand = sprintf(savecommand,handles.CMOScams(calibVal-1),ang);
+        end
+        eval(savecommand)
+        
+        %-----------------------------------------
+        % Calibrate
+        [Xi,Yi]=pred(dataAll(:,1:3),pr,ps,camera);
+        
+        % Save calibration parameters
+        if calibVal == 1
+            posparfname = sprintf('calGeo_%1.3d.pospar',ang);
+        else
+            posparfname = sprintf('cal%s_%1.3d.pospar',handles.CMOScams(calibVal-1),ang);
+        end
+        posparfid=fopen(posparfname,'w');
+        for i=1:6
+            fprintf(posparfid,'%15e\n',pos(i));
+        end
+        for i=1:8
+            fprintf(posparfid,'%15e\n',par(i));
+        end
+        fclose(posparfid);
+
         % Display calibrated points
         cla(qualityPts)
         axes(qualityPts)
@@ -825,7 +780,85 @@ handles.CMOScams = 'ABCD';
         title('Predicted calibration points','FontSize',12);
 %         jpegcommand=sprintf('print -djpeg Predicted%s.jpg',handles.calfilename(1:end-5));
 %         eval(jpegcommand);
+        % return to original directory
+        cd(cDir)
         
     end
 
+%% Save Calibration Points
+    function calPtSave_callback(~,~)
+        % grab current directory
+        cDir = pwd;
+        % change directory to experimental directory
+        cd(handles.expDir)
+        % grab points to save out
+        xi = handles.xi;
+        yi = handles.yi;
+        data = handles.data;
+        calibTxt = handles.calibTxt;
+        % get calibration type
+        calID = get(calibType,'Value');
+        % assemble save out command
+        if calID == 1
+            tmp = sprintf('save calptsGeo_%1.3d xi yi data calibTxt',...
+                handles.angle(calID));
+            eval(tmp)
+        else
+            tmp = sprintf('save calpts%s_%1.3d xi yi data calibTxt',...
+                handles.CMOScams(calID-1),handles.angle(calID));
+            eval(tmp)
+        end
+        % return directory
+        cd(cDir)
+    end
+
+%% Load Calibration Points
+    function calPtLoad_callback(~,~)
+        [filename,pathname] = uigetfile;
+        if ~isempty(filename)
+            %preallocate variables
+            xi = [];
+            yi = [];
+            data = [];
+            calibTxt = [];
+            % load the points
+            load([pathname filename])
+            % save to handles
+            handles.xi = xi;
+            handles.yi = yi;
+            handles.data = data;
+            handles.calibTxt = calibTxt;
+            % plot the points
+            cla(qualityPts)
+            axes(qualityPts)
+            image(handles.a)
+            set(qualityPts,'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[])
+            title('Quality Points','FontSize',12)
+            colormap('gray')
+            ind = handles.xi ~= 0;
+            ind = ind.*(1:length(handles.xi))';
+            ind = unique(ind);
+            ind = ind(2:end);
+            hold on
+            scatter(handles.xi(ind),handles.yi(ind),'ro')
+            hold off
+            % plot the text
+            cla(calibrationPts)
+            axes(calibrationPts)
+            image(handles.a)
+            set(calibrationPts,'XTick',[],'XTickLabel',[],'YTick',[],'YTickLabel',[])
+            title('Calibration Points','FontSize',12)
+            colormap('gray')
+            ind = handles.xi ~= 0;
+            ind = ind.*(1:length(handles.xi))';
+            ind = unique(ind);
+            ind = ind(2:end);
+            calibTxt = cell(length(ind),1);
+            for n = 1:length(ind)
+                calibTxt{n} = handles.calibTxt{ind(n)};
+            end
+            axes(calibrationPts)
+            text(handles.xi(ind),handles.yi(ind),calibTxt,'FontSize',20,'Color','c')
+        end
+    end
 end

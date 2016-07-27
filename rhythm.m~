@@ -324,8 +324,7 @@ handles.apdC = [];  % variable for storing apd calculations
             A = real2rgb(Mframe >= handles.minVisible, 'gray');
             I = J .* A + G .* (1-A);
             handles.movie_img = image(I,'Parent',movie_scrn);
-            set(movie_scrn,'NextPlot','replacechildren','YLim',[0.5 size(I,1)+0.5],...
-                'YTick',[],'XLim',[0.5 size(I,2)+0.5],'XTick',[])
+            set(movie_scrn,'NextPlot','replacechildren','YLim',[1 size(I)],'YTick',[],'XTick',[])
             % Scale signal screens and sweep bar to appropriate time scale
             timeStep = 1/handles.Fs;
             handles.time = 0:timeStep:size(handles.cmosData,3)*timeStep-timeStep;

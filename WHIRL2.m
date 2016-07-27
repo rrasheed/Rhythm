@@ -124,17 +124,21 @@ handles.silhs = [];
         cd(handles.bdir)
         % list of files in the directory
         fileList = dir;
-        % check which list items are directories and which are files
+        % grab files that are tiffs
         checkFiles = zeros(size(fileList,1),1);
         for n = 1:length(checkFiles)
-            checkFiles(n) = fileList(n).isdir;
+            if length(fileList(n).name) > 4
+                checkFiles(n) = strcmp(fileList(n).name(end-3:end),'tiff');
+            else
+                checkFiles(n) = 0;
+            end
         end
-        % grab indices of the files that are directories
+        % grab indices of the files that are tiffs
         checkFiles = checkFiles.*(1:length(checkFiles))';
         checkFiles = unique(checkFiles);
         checkFiles = checkFiles(2:end);
         % remove directories from file list
-        fileList(checkFiles) = [];
+        fileList = fileList(checkFiles);
         
         % identify period that separates the name and file type
         charCheck = zeros(length(fileList(1).name),1);
@@ -522,85 +526,9 @@ handles.silhs = [];
         end
         silh = handles.silhs;
         lims = handles.lims;
-        %-------------------------------------------------------------------------%
-        % % %         % Load camera calibrations
-        % % %         fprintf('\n Load camera parameters:\n');
-        % % %         % Find Rc.dat file
-        % % %         Rcfname = [handles.hdir '/Rc.dat'];
-        % % %         fid = fopen(Rcfname);
-        % % %         if fid == -1
-        % % %             set(msgCenter,'String',['Could not find Rc.dat! Place '...
-        % % %                 'Rc.dat in home directory and try again.']);
-        % % %             return
-        % % %         else
-        % % %             fclose(fid);
-        % % %             set(msgCenter,'String','Found Rc.dat.');
-        % % %             [Rc,Rc_ntheta,Rc_dtheta,message]=readRccal(Rcfname);
-        % % %             if handles.dtheta~=Rc_dtheta
-        % % %                 set(msgCenter,'String',['Designated value for theta in WHIRL '...
-        % % %                     'does not match the theta value in Rc.dat. Process aborted!']);
-        % % %                 return
-        % % %             end
-        % % %         end
-        % % %         Parfname = [handles.hdir '/Par.dat'];
-        % % %         fid = fopen(Parfname);
-        % % %         if fid == -1
-        % % %             set(msgCenter,'String',['Could not find Par.dat! Place '...
-        % % %                 'Par.dat in home directory and try again.']);
-        % % %             return
-        % % %         else
-        % % %             fclose(fid);
-        % % %             set(msgCenter,'String','Found Rc.dat.');
-        % % %             [Par,Par_ntheta,Par_dtheta,message]=readParcal(Rcfname);
-        % % %             if handles.dtheta~=Rc_dtheta
-        % % %                 set(msgCenter,'String',['Designated value for theta in WHIRL '...
-        % % %                     'does not match the theta value in Par.dat. Process aborted!']);
-        % % %                 return
-        % % %             end
-        % % %         end
-        % % %         disp('Camera parameters loaded.')
-        % % %         % Check camera calibration directionality
-        % % %         calibDirection = questdlg(['IF CAMERA CAILBRATION AND OBJECT SCANNING '...
-        % % %             'DIRECTIONALITY (E.G. CW OR CCW) DO NOT MATCH THE CALIBRATION MUST '...
-        % % %             'BE REORDERED. IS REORDERING NEEDED? [N]'],'Reorder Camera Calibration',...
-        % % %             'Yes','No','No');
-        % % %         switch calibDirection
-        % % %             case 'Yes'
-        % % %                 disp('Reordering camera parameters ....')
-        % % %                 Par(1:8,2:end)=fliplr(Par(1:8,2:end));
-        % % %                 Rc_new=Rc;
-        % % %                 for i=2:size(Rc,3)
-        % % %                     Rc_new(1:4,1:4,i)=Rc(1:4,1:4,size(Rc,3)-i+2);
-        % % %                 end
-        % % %                 Rc=Rc_new;
-        % % %                 clear Rc_new
-        % % %             case 'No'
-        % % %                 disp('Ok, will not reorder camera parameters...')
-        % % %         end
-        % % %
-        % % %         % Plot orbit to check spin and angle consistency
-        % % %         disp('Check camera rotation .... ');
-        % % %         for i=1:size(Rc,3)
-        % % %             xyz(i,:)=(inv(Rc(1:4,1:4,i))*[0 0 0 1]')';
-        % % %         end
-        % % %         tt=figure; hold on; axis('square');
-        % % %         axis([min(xyz(:,1)) max(xyz(:,1)) min(xyz(:,2)) max(xyz(:,2)) min(xyz(:,3)) max(xyz(:,3)) ]);
-        % % %         xlabel('x (mm)');
-        % % %         ylabel('y (mm)');
-        % % %         zlabel('z (mm)');
-        % % %         for i=1:size(Rc,3)
-        % % %             fprintf('Angle %d',Rc(1,5,i));
-        % % %             figure(tt);
-        % % %             if i==1, text(xyz(i,1),xyz(i,2),xyz(i,3),sprintf('%d',Rc(1,5,i)));
-        % % %             else
-        % % %                 text(xyz(i,1),xyz(i,2),xyz(i,3),sprintf('%d',Rc(1,5,i)));
-        % % %             end
-        % % %             pause(0.1);
-        % % %         end
-        % % %         clear xyz;
         
         % Perform occluding contours cube carving
-        cubeCarving(handles.hdir,handles.silhs,handles.lims,...
+        cubeCarvingMod(handles.hdir,handles.silhs,handles.lims,...
             handles.dtheta,handles.n_images,dofrontback,r,rr,irsort,...
             inumsort,rsort)
     end
@@ -630,7 +558,7 @@ handles.silhs = [];
                 
                 % Plot image to axes
                 fname = handles.fileList(handles.currentImage).name;
-                a = imread(fname);
+                a = imread([handles.bdir '/' fname]);
                 a = rgb2gray(a);
                 a = double(a);
                 handles.a = a/max(max(a(:,:,1)));
@@ -684,11 +612,20 @@ handles.silhs = [];
         end
         % Update silhouette window
         if handles.loadClicked
+            
+            % Create space at top of image
+            % Added for initial data set MAY NOT BE NECESSARY IN THE FUTURE
+            rm = zeros(size(handles.a,1),size(handles.a,2));
+            rm(1:15,:) = 1;
+            CI = handles.currentImage;
+            handles.silhs(:,:,CI) = handles.silhs(:,:,CI) - rm;
+            handles.silhs(:,:,CI) = handles.silhs(:,:,CI) > 0;
+            
             % Clear axes
             cla(silhView)
             % Plot image to axes
             fname = handles.fileList(handles.currentImage).name;
-            a = imread(fname);
+            a = imread([handles.bdir '/' fname]);
             a = rgb2gray(a);
             a = double(a);
             handles.a = a/max(max(a(:,:,1)));
@@ -742,7 +679,7 @@ handles.silhs = [];
             cla(silhView)
             % Plot image to axes
             fname = handles.fileList(handles.currentImage).name;
-            a = imread(fname);
+            a = imread([handles.bdir '/' fname]);
             a = rgb2gray(a);
             a = double(a);
             handles.a = a/max(max(a(:,:,1)));

@@ -162,7 +162,6 @@ if strcmp(oldfilename(end-2:end),'rsh')
     
     cmosData = cmosData(:,:,2:end);
     if dual~=0
-        bgimage2 = cmosData2(:,:,1);
         cmosData2 = cmosData2(:,:,2:end);
     end
     clear fdata
@@ -261,6 +260,12 @@ end
 
 % Build new filename
 newfilename = [olddir,'/',newfilename];
+
+if strcmp(fstr(3),'U')
+    if dual ~=0
+        bgimage2 = -1*cmosData2(:,:,1);
+    end
+end
 
 %% conversion from CDS to DEF
 cmosData=cmosData-repmat(bgimage,[1 1 size(cmosData,3)]);
