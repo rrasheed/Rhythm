@@ -28,7 +28,7 @@ function cmosData = CMOSconverter(olddir,oldfilename)
 %
 % MODIFICATION LOG:
 %
-% January 15, 2016 - SciMedia is releasing a new camera system with
+% January 15, 2016 - SciMedia has released a new camera system with
 % expanded capabilites. Part of this includes slight modifications to the 
 % established *.rsd format and the intorduction of the new *.gsd format. I
 % have updated the code for the *.rsd changes and added code to recognzie
@@ -91,12 +91,6 @@ if strcmp(oldfilename(end-2:end),'rsh')
         tmp = unique(tmp);
         tmp = tmp(2:end);
         dataPaths{n}(tmp) = [];
-        
-% %         if n == length(lineBreaksInd)
-% %             dataPaths{n} = fstr(lineBreaksInd(n)+1:end-2);
-% %         else
-% %             dataPaths{n} = fstr(lineBreaksInd(n)+1:lineBreaksInd(n+1)-2);
-% %         end
     end
     
     % Read out CMOS data
@@ -121,9 +115,10 @@ if strcmp(oldfilename(end-2:end),'rsh')
     channel{2} = zeros(1,size(cmosData,3)*20);
     analogInd = 1:4:80;
     k=0;
+%     k = 1;
     for i = 2:num
         fpath = [dirname dataPaths{i}];
-        fid=fopen(fpath,'r','b');       % use big-endian format
+        fid=fopen(fpath,'r','l');       % use big-endian format
         fdata=fread(fid,'int16=>int32')'; %
         fclose(fid);
         fdata = reshape(fdata,12800,[]);
@@ -139,6 +134,7 @@ if strcmp(oldfilename(end-2:end),'rsh')
                 oneframe = fdata(:,j);  % one frame at certain time point
                 oneframe = reshape(oneframe,128,100);
                 cmosData(:,:,k*size(fdata,2)+j) = oneframe(21:120,:)';
+%                 cmosData(:,:,k) = oneframe(21:120,:)';
             else
                 newInd = (j+1)/2;
                 oneframe = fdata(:,j);
@@ -160,6 +156,14 @@ if strcmp(oldfilename(end-2:end),'rsh')
         end
         % incremement counter to step forward in time
         k=k+1;
+    end
+    
+    
+    
+    cmosData = cmosData(:,:,2:end);
+    if dual~=0
+        bgimage2 = cmosData2(:,:,1);
+        cmosData2 = cmosData2(:,:,2:end);
     end
     clear fdata
     % Get background image for new file format
@@ -213,7 +217,7 @@ else
     cmosData = cmosData(xSkipPix+1:xSkipPix+xActPix,ySkipPix+1:ySkipPix+yActPix,:);
     if size(cmosData,1) ~= size(bgimage,1)
         % For some reason images taken with D225 cameras need to be rotated
-        cmosData = rot90(cmosData,3);
+        cmosData = flip(rot90(cmosData,3),2);
     end
     % Analog inputs 
     channel = cell(4,1);
@@ -230,61 +234,33 @@ end
 len = size(cmosData,3);
 thred = 2^16*3/4;
 ind = reshape(1:size(cmosData,1)*size(cmosData,2),[size(cmosData,1) size(cmosData,2)]);
-h = waitbar(0/len-1,'Importing data...');
-for k = 2:len
-    % Identify signals that meet the criteria at this time point
-    check = abs(cmosData(:,:,k)-cmosData(:,:,k-1))>thred;
-    step = check*(size(cmosData,1)*size(cmosData,2)*(k-1));
-    check = check.*ind+step;
-    check = unique(check);
-    if length(check)>1
-        check = check(2:end);
-        % For the values greater than zero
-        above = cmosData(check)>0;
-        cmosData(above) = cmosData(above)-2^16;
-        % For the values less than zero
-        below = cmosData(check)<0;
-        cmosData(below) = 2^16+cmosData(below);
-    end
-    % If there are two cameras
-    if strcmp(fstr(3),'U')
-        if dual ~= 0
-            check2 = abs(cmosData2(:,:,k)-cmosData2(:,:,k-1))>thred;
-            check2 = check2*ind*(size(cmosData2,1)*size(cmosData2,2)*(k-1));
-            check2 = unique(check2);
-            if length(check2)>1
-                check2 = check2(2:end);
-                % For the values greater than zero
-                above2 = cmosData2(check2)>0;
-                cmosData2(above2) = cmosData2(above2)-2^16;
-                % For the values less than zero
-                below2 = cmosData2(check2)<0;
-                cmosData2(below2) = 2^16+cmosData2(below2);
-            end
-        end
-    end
-    % Flip first camera
-    cmosData(:,:,k) = -cmosData(:,:,k);
-    % Flip second camera
-    if strcmp(fstr(3),'U')
-        if dual ~= 0
-            cmosData2(:,:,k) = -cmosData2(:,:,k);
-        end
-    end
-    waitbar((k-1)/(len-1))
+ind = repmat(ind,[1 1 len]);
+step = reshape(0:size(cmosData,3)-1,[1 1 len]);
+step = repmat(step*(size(cmosData,1)*size(cmosData,2)),[size(cmosData,1) size(cmosData,2) 1]);
+ind = ind+step;
+ind = ind(:,:,2:end);
+
+%Identify signals that meet the criteria
+check = abs(cmosData(:,:,2:end)-cmosData(:,:,1:end-1))>thred;
+check = check.*ind;
+check = unique(check);
+check = check(2:end);
+
+% For the values greater than zero
+above = cmosData(check)>0;
+cmosData(check(above)) = cmosData(check(above))-2^16;
+% For the values less than zero
+below = cmosData(check)<0;
+cmosData(check(below)) = 2^16+cmosData(check(below));
+
+
+cmosData = -cmosData;
+if dual ~= 0
+    cmosData2 = -cmosData2;
 end
-close(h)
 
 % Build new filename
 newfilename = [olddir,'/',newfilename];
-
-if strcmp(fstr(3),'U')
-% % %     % Build second background image
-% % %     bgimage = cmosData(:,:,1);
-    if dual ~=0
-        bgimage2 = cmosData2(:,:,1);
-    end
-end
 
 %% conversion from CDS to DEF
 cmosData=cmosData-repmat(bgimage,[1 1 size(cmosData,3)]);

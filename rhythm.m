@@ -427,6 +427,8 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
                 apply_button,bin_popup,filt_popup,drift_popup,play_button,anal_select,...
                 stop_button,dispwave_button,expmov_button,starttimesig_edit,...
                 endtimesig_edit,expwave_button,export_button,volt_choice,cal_choice],'Enable','on')
+            set([snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,...
+                snrmax_edit,snrcal,snrvolt],'Enable','on')
         end
     end
 
@@ -824,7 +826,7 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
 
 %% Export signal waves to new screen
     function expwave_button_callback(~,~)
-        M = handles.M; colax='bgmkc'; [a,~]=size(M);
+        M = handles.M; colax='bgmyc'; [a,~]=size(M);
         if isempty(M)
             msgbox('No wave to export. Please use "Display Wave" button to select pixels on movie screen.','Icon','help')
         else
@@ -832,9 +834,12 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
                 'Visible','off','OuterPosition',[100, 50, 555,120*a+80]);
             for x = 1:a
                 subplot('Position',[0.06 (120*(a-x)+70)/(120*a+80) 0.9 110/(120*a+80)])
-                plot(handles.time,squeeze(handles.cmosData(M(x,2),M(x,1),:)),'color',colax(x),'LineWidth',2)
-                xlim([handles.starttime handles.endtime]);
-                hold on
+                V = (handles.cmosData(M(x,2),M(x,1),:));
+                C = (handles.cmosData2(M(x,2),M(x,1),:));
+                plot(handles.time,squeeze(V),'color',colax(x),'LineWidth',2)
+                hold on 
+                plot(handles.time,squeeze(C),'color','k','LineWidth',2)
+                xlim([handles.starttime handles.endtime]); 
                 if x == a
                 else
                     set(gca,'XTick',[])
@@ -941,22 +946,20 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
             cmosData2 = normalize_data(cmosData2,handles.Fs);
             handles.normflag = 1;
         end
-        % Activate the SNR tools
-        if removeBG_state == 1 && bin_state == 1 && filt_state == 1 && drift_state == 1
-            handles.foregnd = cmosData;
-            r = 1;
-            if norm_state == 1
-                handles.foregnd = cmosData;
-                r = 1;
+        
+        if removeBG_state == 1
+            if bin_state == 1
+                if filt_state == 1
+                    if drift_state == 1
+                        handles.foregnd = cmosData;
+                        if norm_state ==1
+                             handles.foregnd = cmosData;
+                        end
+                    end
+                end
             end
-        else
-            r = 0;
         end
-        % Keep SNR tools on only when signal conditioning is active
-        while r == 1
-           set([snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,...
-                snrmax_edit,snrcal,snrvolt],'Enable','on'); 
-        end
+
         % Delete the progress bar
         delete(g1)
         % Save conditioned signal
@@ -1037,21 +1040,75 @@ handles.choice = []; %hold the values for the individual boxes in the checkbox
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Signal to Noise Ratio Fuctionality
-%% Create SNR Matrix
+%% Create SNR Mask
 function sig2noise(~,~)
-    foregnd = handles.foregnd;
-    [~,ampsig] = findpeaks(foregnd,'MinPeakHeight',0);
-% %     handles.noise = foregnd - signal;
-% %     noise = handles.noise;
-% %     handles.snr = snr_calc(signal,noise);
-% %     handles.rms = snr_calc_RMS(signal,noise);
-    
-    
-    
-    
+    fgrnd = handles.foregnd;
+    signal = mean(fgrnd,3);
+    [rs,cs] = size(signal);
+    for i=rs
+        for j=cs
+            if isnan(signal(i,j));
+                signal(i,j) = 0;
+            end
+        end
     end
+    noise = handles.bgRGB;
+    noise_SD = std(noise,[],3);
+    SNR = signal./noise_SD;
+    noinfsnr = SNR;
+    for i=rs
+            for j=cs
+                if noinfsnr(i,j) == Inf || noinfsnr(i,j) == -Inf || isnan(noinfsnr(i,j))
+                    noinfsnr(i,j)= 0;
+                end
+            end
+     end
+% %     maxSNR = max(max(noinfsnr));
+     for i=rs
+            for j=cs
+                if SNR(i,j) == Inf
+                    SNR(i,j)= maxSNR;
+                end
+            end
+     end
+                    
+end
+  
+% %     div = 0.4; 
+%     [r,c,t] = size(foregnd);
+%     forsum = sum(foregnd(~isnan(foregnd)));
+%     fornum = numel(foregnd(~isnan(foregnd)));
+%     foravg = forsum/fornum;
+%     foregnd(isnan(foregnd)) = 0;
+%      temp = foregnd;
+%   
+%     noise = handles.bg;
+%     noise_SD = std(noise,[],3);
+%     signal = max(temp,[],3);
+%     SNRrms = rms(signal)./rms(noise);
+%     maxrms = max(SNRrms);
+%     
+%     axes(movie_scrn);
+%     set(f,'CurrentAxes',movie_scrn)
+%     cla
+%     currentframe = handles.frame;
+%     drawFrame(currentframe);
+%     hold on
+%     set(movie_scrn,'YTick',[],'XTick',[]);
+%     I = imagesc(intensity_bg,'Parent',movie_scrn);
+%     colormap(movie_scrn,parula)
+%     
+% % %     %Update markers
+%     M = handles.M;colax='bgmyc';[a,~]=size(M);
+%     hold on
+%     for x=1:a
+%         plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','k','Parent',movie_scrn);
+%         set(movie_scrn,'YTick',[],'XTick',[]);% Hide tick markes
+%     end
+%     hold off
+% end
 
-
+%% Calculate SNR RMS
 
 
 
