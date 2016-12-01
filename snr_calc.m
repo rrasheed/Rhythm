@@ -9,7 +9,7 @@ function new_data = snr_calc(signal,noise)
 % signal = filtered signal after removing background image
 %
 % noise = Residual noise that is left after the signal is subtracted from
-%         the forground
+%         the forground. 
 %
 %
 % OUTPUTS:
@@ -33,10 +33,18 @@ function new_data = snr_calc(signal,noise)
 %
 % Author: Rayhaan Rasheed (rrasheed@gwmail.gwu.edu)
 
-%% Method 1
+%% Method 1 : 
 avgsig = mean(signal,3);
 stdnoise = std(noise,[],3);
 snr = avgsig./stdnoise;
+[r,c] = size(snr);
+    for i=1:r
+        for j=1:c
+            if (isnan(snr(i,j))==1)
+                snr(i,j) = 0;
+            end
+        end
+    end
 new_data = snr;
 %% Method 2
 % % sigrms = rms(signal,3);

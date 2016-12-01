@@ -1,4 +1,4 @@
-function rhythm
+ function rhythm
 % % close all; clc;
 %% RHYTHM (01/27/2012)
 % Matlab software for analyzing optical mapping data
@@ -126,7 +126,8 @@ snrmin_text = uicontrol('Parent',sig_noise,'Style','text','FontSize',12,'String'
 snrmin_edit = uicontrol('Parent',sig_noise,'Style','edit','FontSize',12,'Position',[44 96 57 20],'Visible','on');
 snrmax_text = uicontrol('Parent',sig_noise,'Style','text','FontSize',12,'String','Max:','Position',[1 57 57 25],'Visible','on');
 snrmax_edit = uicontrol('Parent',sig_noise,'Style','edit','FontSize',12,'Position',[44 65 57 20],'Visible','on');
-snrend = uicontrol('Parent',sig_noise,'Style','pushbutton','FontSize',12,'String','Revert','Position',[10 20 125 30],'Callback',{@go_back_to_original});
+snrcal = uicontrol('Parent',sig_noise,'Style','checkbox','FontSize',12,'String','Calcium Map','Position',[10 30 150 25]);
+snrvolt = uicontrol('Parent',sig_noise,'Style','checkbox','FontSize',12,'String','Voltage Map','Position',[10 5 150 25]);
 
 % Invert Color Map Option
 invert_cmap = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',12,'String','Invert Colormaps','Position',[175 88 150 25],'Visible','on','Callback',{@invert_cmap_callback});
@@ -156,7 +157,7 @@ set([f,p1,filelist,selectdir,refreshdir,loadfile,movie_scrn,movie_slider, signal
     starttimemap_edit,endtimemap_text,endtimemap_edit,createmap_button,minapd_text,minapd_edit,maxapd_text,maxapd_edit,...
     percentapd_text,percentapd_edit,remove_motion_click,remove_motion_click_txt,calc_apd_button,expwave_button,...
     starttimesig_text,starttimesig_edit,endtimesig_text,endtimesig_edit, sig_noise,snrslider,snrbutton,snrmin_text,...
-    snrmin_edit,snrmax_text,snrmax_edit,snrend],'Units','normalized')
+    snrmin_edit,snrmax_text,snrmax_edit,snrcal,snrvolt],'Units','normalized')
 
 
 % Disable buttons that will not be needed until data is loaded
@@ -165,7 +166,7 @@ set([removeBG_button,bg_thresh_edit,bg_thresh_label,perc_ex_edit,perc_ex_label,b
     createmap_button,minapd_edit,minapd_text,maxapd_edit,maxapd_text,percentapd_edit,percentapd_text,remove_motion_click,remove_motion_click_txt,...
     calc_apd_button,play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,endtimesig_edit,expwave_button,loadfile,...
     refreshdir,invert_cmap,export_button,volt_choice,cal_choice,snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,snrmax_edit,...
-    snrend],'Enable','off')
+    snrcal,snrvolt],'Enable','off')
 
 % Hide all analysis buttons
 set([invert_cmap,starttimemap_text,starttimemap_edit,endtimemap_text,...
@@ -199,7 +200,6 @@ handles.cmap = colormap('jet'); %saves the default colormap values
 handles.apdC = [];  % variable for storing apd calculations
 handles.checkbox = []; %hold the variables that plot the Ca and Vm data
 handles.choice = []; %hold the values for the individual boxes in the checkbox
-handles.snrflg = 0;
 
 %% All Callback functions
 
@@ -311,7 +311,7 @@ handles.snrflg = 0;
                 end
                 axes(movie_scrn)
                 cla
-                M = handles.M; colax='bgmyc'; [a,~]=size(M);
+                M = handles.M; colax='bgmkc'; [a,~]=size(M);
                 currentframe = handles.frame;
                 drawFrame(currentframe);
                 hold on
@@ -336,7 +336,6 @@ handles.snrflg = 0;
 
 %% Load selected files in filelist
     function loadfile_callback(~,~)
-        handles.snrflg = 0;
         if isempty(handles.filename)
             msgbox('Warning: No data selected','Title','warn')
         else
@@ -364,11 +363,7 @@ handles.snrflg = 0;
                 handles.cmosData = double(Data.cmosData(:,:,2:end));
                 handles.cmosData2 = double(Data.cmosData2(:,:,2:end));
                 handles.bg = double(Data.bgimage);
-                bgmax = max(max(handles.bg));
-                handles.nbg = handles.bg/bgmax;
                 handles.bg2 = double(Data.bgimage2);
-                bgmax2 = max(max(handles.bg2));
-                handles.nbg2 = handles.bg2/bgmax2;
             else
                  % Load from single camera
                 handles.cmosData = double(Data.cmosData(:,:,2:end));
@@ -388,7 +383,7 @@ handles.snrflg = 0;
             handles.cmosRawData = handles.cmosData;
             handles.cmosRawData2 = handles.cmosData2;
             % Convert background to grayscale 
-            handles.bgRGB = real2rgb(handles.bg,'gray');
+            handles.bgRGB = real2rgb(handles.bg, 'gray');
             %%%%%%%%% WINDOWED DATA %%%%%%%%%%
             handles.matrixMax = .9 * max(handles.cmosData(:));
             % Initialize movie screen to the first frame
@@ -433,7 +428,7 @@ handles.snrflg = 0;
                 stop_button,dispwave_button,expmov_button,starttimesig_edit,...
                 endtimesig_edit,expwave_button,export_button,volt_choice,cal_choice],'Enable','on')
             set([snrslider,snrbutton,snrmin_text,snrmin_edit,snrmax_text,...
-                snrmax_edit,snrend],'Enable','on')
+                snrmax_edit,snrcal,snrvolt],'Enable','on')
         end
     end
 
@@ -498,7 +493,7 @@ handles.snrflg = 0;
         set(f,'CurrentAxes',movie_scrn)
         drawFrame(i);
         % Update markers on movie screen
-        M = handles.M; colax='bgmyc'; [a,~]=size(M);
+        M = handles.M; colax='bgmkc'; [a,~]=size(M);
         hold on
         for x=1:a
             plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','w','Parent',movie_scrn);
@@ -517,23 +512,18 @@ handles.snrflg = 0;
     function drawFrame(frame)
         G = handles.bgRGB;
         Mframe = handles.cmosData(:,:,frame);
-        if handles.normflag == 0 && handles.snrflg == 0
+        if handles.normflag == 0
             Mmax = handles.matrixMax;
             Mmin = handles.minVisible;
             numcol = size(jet,1);
             J = ind2rgb(round((Mframe - Mmin) ./ (Mmax - Mmin) * (numcol - 1)), 'jet');
             A = real2rgb(Mframe >= handles.minVisible, 'gray');
-        elseif handles.normflag == 1 && handles.snrflg == 0
+        else
             J = real2rgb(Mframe, 'jet');
             A = real2rgb(Mframe >= handles.normalizeMinVisible, 'gray');
         end
-        if handles.snrflg == 1
-            J = real2rgb(handles.SNR, 'jet');
-            A = real2rgb(handles.SNR > 0,'gray');
-        end
-        image(G,'Parent',movie_scrn);
-        hold on 
-        image(J,'AlphaData',A(:,:,1));
+        I = J .* A + G .* (1 - A);
+        image(I,'Parent',movie_scrn);
     end
 
 
@@ -554,7 +544,7 @@ handles.snrflg = 0;
                     drawFrame(i);
                     handles.frame = i;
                     % Update markers with each frame
-                    M = handles.M;[a,~]=size(M); colax='bgmyc';
+                    M = handles.M;[a,~]=size(M); colax='bgmkc';
                     hold on
                     for x=1:a
                         plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','w','Parent',movie_scrn)
@@ -579,7 +569,7 @@ handles.snrflg = 0;
             drawFrame(i);
             handles.frame = i;
             % Update makers with each frame
-            M = handles.M;[a,~]=size(M); colax='bgmyc';
+            M = handles.M;[a,~]=size(M); colax='bgmkc';
             hold on
             for x=1:a
                 plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','w','Parent',movie_scrn)
@@ -615,7 +605,7 @@ handles.snrflg = 0;
             check = 1;
         end
         
-        if check == 1
+        if check == 1;
              maxV = max(handles.cmosData(j,i,:));
              minV = min(handles.cmosData(j,i,:));
              maxCa = max(handles.cmosData2(j,i,:));
@@ -1052,75 +1042,84 @@ handles.snrflg = 0;
 %% Signal to Noise Ratio Fuctionality
 %% Create SNR Mask
 function sig2noise(~,~)
-    handles.snrflg = 1;
     fgrnd = handles.foregnd;
-    norm_state = get(norm_button,'Value');
-    if norm_state == 1
-        noise = handles.nbg;
-    else
-        noise = handles.bg;
-    end
-    [r,c] = size(noise);
-    Savg = mean(fgrnd,3);
-    Navg = mean(noise,3);
-    Sigvar = var(fgrnd,0,3,'omitnan');
-    Noivar = var(noise,0,'omitnan');
-    SNR = Sigvar./Noivar;
-    infcount = 0;
-    for i=1:r
-        for j=1:c
-            if (isnan(SNR(i,j))==1)
-                SNR(i,j) = 0;
+    signal = mean(fgrnd,3);
+    [rs,cs] = size(signal);
+    for i=rs
+        for j=cs
+            if isnan(signal(i,j));
+                signal(i,j) = 0;
             end
         end
     end
-    for i=1:r
-        for j=1:c
-            if (isinf(SNR(i,j))==1)
-                infcount = infcount+1;
+    noise = handles.bgRGB;
+    noise_SD = std(noise,[],3);
+    SNR = signal./noise_SD;
+    noinfsnr = SNR;
+    for i=rs
+            for j=cs
+                if noinfsnr(i,j) == Inf || noinfsnr(i,j) == -Inf || isnan(noinfsnr(i,j))
+                    noinfsnr(i,j)= 0;
+                end
             end
-        end
-    end
-    if infcount > 1
-        msgbox('We have detected an INF in your SNR. Please do not include a 0 into your varience');
-        return
-    end
-    
-% Creating mask for movie screen
-    handles.SNR = SNR;
-    axes(movie_scrn);
-    set(f,'CurrentAxes',movie_scrn)
-    cla
-    currentframe = handles.frame;
-    drawFrame(currentframe);
-    
-%Update markers
-    M = handles.M;colax='bgmyc';[a,~]=size(M);
-    hold on
-    for x=1:a
-        plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','k','Parent',movie_scrn);
-        set(movie_scrn,'YTick',[],'XTick',[]);% Hide tick markes
-    end
-    hold off
+     end
+% %     maxSNR = max(max(noinfsnr));
+     for i=rs
+            for j=cs
+                if SNR(i,j) == Inf
+                    SNR(i,j)= maxSNR;
+                end
+            end
+     end
+                    
 end
+  
+% %     div = 0.4; 
+%     [r,c,t] = size(foregnd);
+%     forsum = sum(foregnd(~isnan(foregnd)));
+%     fornum = numel(foregnd(~isnan(foregnd)));
+%     foravg = forsum/fornum;
+%     foregnd(isnan(foregnd)) = 0;
+%      temp = foregnd;
+%   
+%     noise = handles.bg;
+%     noise_SD = std(noise,[],3);
+%     signal = max(temp,[],3);
+%     SNRrms = rms(signal)./rms(noise);
+%     maxrms = max(SNRrms);
+%     
+%     axes(movie_scrn);
+%     set(f,'CurrentAxes',movie_scrn)
+%     cla
+%     currentframe = handles.frame;
+%     drawFrame(currentframe);
+%     hold on
+%     set(movie_scrn,'YTick',[],'XTick',[]);
+%     I = imagesc(intensity_bg,'Parent',movie_scrn);
+%     colormap(movie_scrn,parula)
+%     
+% % %     %Update markers
+%     M = handles.M;colax='bgmyc';[a,~]=size(M);
+%     hold on
+%     for x=1:a
+%         plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','k','Parent',movie_scrn);
+%         set(movie_scrn,'YTick',[],'XTick',[]);% Hide tick markes
+%     end
+%     hold off
+% end
 
-%% Revert back to orginal frame
-function go_back_to_original(~,~)
-    handles.snrflg = 0; 
-    axes(movie_scrn);
-    set(f,'CurrentAxes',movie_scrn)
-    cla
-    currentframe = handles.frame;
-    drawFrame(currentframe);  
-%Update markers    
-    M = handles.M;colax='bgmyc';[a,~]=size(M);
-    hold on
-    for x=1:a
-        plot(M(x,1),M(x,2),'cs','MarkerSize',8,'MarkerFaceColor',colax(x),'MarkerEdgeColor','k','Parent',movie_scrn);
-        set(movie_scrn,'YTick',[],'XTick',[]);% Hide tick markes
-    end
-    hold off
-end
+%% Calculate SNR RMS
+
+
+
+
+
+
+
+
+
+
+
 %% Data Analysis Selection
     function anal_select_callback(~,~)
         % Get the type of analysis
@@ -1344,3 +1343,5 @@ function export_callback(~,~)
     save(movname,'cmosData','cmosRawData','analog')
 end
 end
+
+
