@@ -529,7 +529,7 @@ handles.snrflg = 0;
         end
         if handles.snrflg == 1
             J = real2rgb(handles.SNR, 'jet');
-            A = real2rgb(handles.SNR > 0,'gray');
+            A = real2rgb(handles.snrmaxedit >= handles.SNR & handles.SNR > handles.snrminedit,'gray');
         end
         image(G,'Parent',movie_scrn);
         hold on 
@@ -1062,10 +1062,9 @@ function sig2noise(~,~)
     end
     [r,c] = size(noise);
     Savg = mean(fgrnd,3);
-    Navg = mean(noise,3);
     Sigvar = var(fgrnd,0,3,'omitnan');
     Noivar = var(noise,0,'omitnan');
-    SNR = Sigvar./Noivar;
+    SNR = Sigvar./noise;
     infcount = 0;
     for i=1:r
         for j=1:c
@@ -1088,6 +1087,20 @@ function sig2noise(~,~)
     
 % Creating mask for movie screen
     handles.SNR = SNR;
+    
+    handles.SNRmax = max(max(SNR));
+    handles.SNRmin = min(min(SNR));
+    if handles.snrflg ~=
+    set(snrmin_edit, 'String', num2str(handles.SNRmin));
+    set(snrmax_edit, 'String', num2str(handles.SNRmax));
+    handles.snrmaxedit = str2num(get(snrmax_edit,'String'));
+    if isempty(handles.snrmaxedit)
+        handles.snrmaxedit = handles.SNRmax;
+    end
+    handles.snrminedit = str2num(get(snrmin_edit,'String'));
+    if isempty(handles.snrminedit)
+        handles.snrminedit = handles.SNRmin;
+    end
     axes(movie_scrn);
     set(f,'CurrentAxes',movie_scrn)
     cla
