@@ -1090,7 +1090,6 @@ function sig2noise(~,~)
     
     handles.SNRmax = max(max(SNR));
     handles.SNRmin = min(min(SNR));
-    if handles.snrflg ~=
     set(snrmin_edit, 'String', num2str(handles.SNRmin));
     set(snrmax_edit, 'String', num2str(handles.SNRmax));
     handles.snrmaxedit = str2num(get(snrmax_edit,'String'));
