@@ -273,12 +273,23 @@ handles.apdC = [];  % variable for storing apd calculations
             filename = [handles.dir,'/',handles.filename];
             
             % Check for existence of already converted *.mat file
-            if ~exist([filename(1:end-3),'mat'],'file')
+            if exist([filename(1:end-3),'mat'],'file')
+                Data = load([filename(1:end-3),'mat']);
                 % Convert data and save out *.mat file
-                CMOSconverter(handles.dir,handles.filename);
+            elseif exist([filename(1:end-3),'sif'],'file')    
+                [~, Data, fps, ~,~,~]=sifopen(filename);
+                cmosData = -1.*Data;
+                cmosData = flipdim(cmosData,1);
+                handles.cmosData = double(cmosData(:,:,2:end));
+                handles.Fs = fps;
+                handles.bg = mean(-1.*cmosData(:,:,1:4),3); 
+                andor=1; % variable to detect if andor data is being used
+            else
+                CMOSconverter(handles.dir,handles.filename); 
+                Data = load([filename(1:end-3),'mat']);
             end
             % Load data from *.mat file
-            Data = load([filename(1:end-3),'mat']);
+
             
             % Check for dual camera data
             if isfield(Data,'cmosData2')
@@ -300,7 +311,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 % necessarily the ecg channel. Correspondes to analog1
                 % input to SciMedia box
                 handles.ecg = Data.channel{1}(1:size(Data.channel{1},2)/2)*-1;
-            else
+            elseif andor~=1
                 % Load from single camera
                 handles.cmosData = double(Data.cmosData(:,:,2:end));
                 handles.bg = double(Data.bgimage);
@@ -367,9 +378,11 @@ handles.apdC = [];  % variable for storing apd calculations
             handles.dir = dir_name;
             search_name = [dir_name,'/*.rsh'];
             search_nameNew = [dir_name,'/*.gsh'];
+            search_nameAndor = [dir_name,'/*.sif']; %adding Andor SIF support
             files = struct2cell(dir(search_name));
             filesNew = struct2cell(dir(search_nameNew));
-            handles.file_list = [files(1,:)'; filesNew(1,:)'];
+            filesAndor = struct2cell(dir(search_nameAndor));
+            handles.file_list = [files(1,:)'; filesNew(1,:)';filesAndor(1,:)'];
             set(filelist,'String',handles.file_list)
             handles.filename = char(handles.file_list(1));
             % enable the refresh directory and load file buttons
@@ -397,9 +410,11 @@ handles.apdC = [];  % variable for storing apd calculations
         dir_name = handles.dir;
         search_name = [dir_name,'/*.rsh'];
         search_nameNew = [dir_name,'/*.gsh'];
+        search_nameAndor = [dir_name,'/*.sif']; %adding Andor SIF support
         files = struct2cell(dir(search_name));
         filesNew = struct2cell(dir(search_nameNew));
-        handles.file_list = [files(1,:)'; filesNew(1,:)'];
+        filesAndor = struct2cell(dir(search_nameAndor));
+        handles.file_list = [files(1,:)'; filesNew(1,:)';filesAndor(1,:)'];
         set(filelist,'String',handles.file_list)
         handles.filename = char(handles.file_list(1));
     end
