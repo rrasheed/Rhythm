@@ -633,7 +633,9 @@ handles.apdC = [];  % variable for storing apd calculations
             % Plot sweep bar on bottom subplot
             subplot('Position',[0.05, 0.1, 0.9,0.15])
             a = [handles.time(i) handles.time(i)];
-            b = [min(handles.ecg) max(handles.ecg)];
+            %b = [min(handles.ecg) max(handles.ecg)];
+            squeeze1=squeeze(handles.cmosData(64,64,:));
+            b=[min(squeeze1) max(squeeze1)];
             cla
             plot(a,b,'r','LineWidth',1.5);hold on
             % Plot ecg data on bottom subplot
@@ -641,9 +643,9 @@ handles.apdC = [];  % variable for storing apd calculations
             % Create a variable for the endtime index
             endtime = round(handles.endtime*handles.Fs);
             % Plot the desired
-            plot(handles.time(start:endtime),handles.ecg(start:endtime));
+            plot(handles.time(start:endtime),squeeze1(1:end-1));
             % 
-            axis([handles.time(start) handles.time(fin) min(handles.ecg) max(handles.ecg)])
+%            axis([handles.time(start) round(handles.time(fin)) floor(min(squeeze1)) floor(max(squeeze1))])
             % Set the xick mark to start from zero
             xlabel('Time (sec)');hold on
             % Image movie frames on the top subplot
@@ -671,49 +673,49 @@ handles.apdC = [];  % variable for storing apd calculations
         close(fig);
         close(vidObj); % Close the file.
     end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% SIGNAL SCREENS
-%% Start Time Editable Textbox for Signal Screens
-    function starttimesig_edit_callback(source,~)
-        %get the val01 (lower limit) and val02 (upper limit) plot values
-        val01 = str2double(get(source,'String'));
-        val02 = str2double(get(endtimesig_edit,'String'));
-        if val01 >= 0 && val01 <= (size(handles.cmosData,3)-1)*handles.Fs
-            set(signal_scrn1,'XLim',[val01 val02]);
-            set(signal_scrn2,'XLim',[val01 val02]);
-            set(signal_scrn3,'XLim',[val01 val02]);
-            set(signal_scrn4,'XLim',[val01 val02]);
-            set(signal_scrn5,'XLim',[val01 val02]);
-            set(sweep_bar,'XLim',[val01 val02]);
-        else
-            error = 'The START TIME must be greater than %d and less than %.3f.';
-            msgbox(sprintf(error,0,max(handles.time)),'Incorrect Input','Warn');
-            set(source,'String',0)
-        end
-        % Update the start time value
-        handles.starttime = val01;
-    end
-
-%% End Time Editable Textbox for Signal Screens
-    function endtimesig_edit_callback(source,~)
-        val01 = str2double(get(starttimesig_edit,'String'));
-        val02 = str2double(get(source,'String'));
-        if val02 >= 0 && val02 <= (size(handles.cmosData,3)-1)*handles.Fs
-            set(signal_scrn1,'XLim',[val01 val02]);
-            set(signal_scrn2,'XLim',[val01 val02]);
-            set(signal_scrn3,'XLim',[val01 val02]);
-            set(signal_scrn4,'XLim',[val01 val02]);
-            set(signal_scrn5,'XLim',[val01 val02]);
-            set(sweep_bar,'XLim',[val01 val02]);
-        else
-            error = 'The END TIME must be greater than %d and less than %.3f.';
-            msgbox(sprintf(error,0,max(handles.time)),'Incorrect Input','Warn');
-            set(source,'String',max(handles.time))
-        end
-        % Update the end time value
-        handles.endtime = val02;
-    end
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %% SIGNAL SCREENS
+% %% Start Time Editable Textbox for Signal Screens
+%     function starttimesig_edit_callback(source,~)
+%         %get the val01 (lower limit) and val02 (upper limit) plot values
+%         val01 = str2double(get(source,'String'));
+%         val02 = str2double(get(endtimesig_edit,'String'));
+%         if val01 >= 0 && val01 <= (size(handles.cmosData,3)-1)*handles.Fs
+%             set(signal_scrn1,'XLim',[val01 val02]);
+%             set(signal_scrn2,'XLim',[val01 val02]);
+%             set(signal_scrn3,'XLim',[val01 val02]);
+%             set(signal_scrn4,'XLim',[val01 val02]);
+%             set(signal_scrn5,'XLim',[val01 val02]);
+%             set(sweep_bar,'XLim',[val01 val02]);
+%         else
+%             error = 'The START TIME must be greater than %d and less than %.3f.';
+%             msgbox(sprintf(error,0,max(handles.time)),'Incorrect Input','Warn');
+%             set(source,'String',0)
+%         end
+%         % Update the start time value
+%         handles.starttime = val01;
+%     end
+% 
+% %% End Time Editable Textbox for Signal Screens
+%     function endtimesig_edit_callback(source,~)
+%         val01 = str2double(get(starttimesig_edit,'String'));
+%         val02 = str2double(get(source,'String'));
+%         if val02 >= 0 && val02 <= (size(handles.cmosData,3)-1)*handles.Fs
+%             set(signal_scrn1,'XLim',[val01 val02]);
+%             set(signal_scrn2,'XLim',[val01 val02]);
+%             set(signal_scrn3,'XLim',[val01 val02]);
+%             set(signal_scrn4,'XLim',[val01 val02]);
+%             set(signal_scrn5,'XLim',[val01 val02]);
+%             set(sweep_bar,'XLim',[val01 val02]);
+%         else
+%             error = 'The END TIME must be greater than %d and less than %.3f.';
+%             msgbox(sprintf(error,0,max(handles.time)),'Incorrect Input','Warn');
+%             set(source,'String',max(handles.time))
+%         end
+%         % Update the end time value
+%         handles.endtime = val02;
+%     end
 
 %% Export signal waves to new screen
     function expwave_button_callback(~,~)
