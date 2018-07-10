@@ -39,11 +39,11 @@ f = figure('Name','RHYTHM','Visible','off','Position',[scrn_size(3),scrn_size(4)
 % set(f,'Visible','off')
 
 % Load Data
-p1 = uipanel('Title','Display Data','FontSize',12,'Position',[.01 .01 .98 .98]);
+p1 = uipanel('Title','Display Data','FontSize',11,'Position',[.01 .01 .98 .98]);
 filelist = uicontrol('Parent',p1,'Style','listbox','String','Files','Position',[10 240 150 450],'Callback',{@filelist_callback});
-selectdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Select Directory','Position',[10 205 150 30],'Callback',{@selectdir_callback});
-loadfile = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Load','Position',[10 175 150 30],'Callback',{@loadfile_callback});
-refreshdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Refresh Directory','Position',[10 145 150 30],'Callback',{@refreshdir_callback});
+selectdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Select Directory','Position',[10 205 150 30],'Callback',{@selectdir_callback});
+loadfile = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Load','Position',[10 175 150 30],'Callback',{@loadfile_callback});
+refreshdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Refresh Directory','Position',[10 145 150 30],'Callback',{@refreshdir_callback});
 
 % Movie Screen for Optical Data
 movie_scrn = axes('Parent',p1,'Units','Pixels','YTick',[],'XTick',[],'Position',[170, 190, 500,500]);
@@ -64,66 +64,66 @@ signal_scrn3 = axes('Parent',p1,'Units','Pixels','Color','w','XTick',[],'Positio
 signal_scrn4 = axes('Parent',p1,'Units','Pixels','Color','w','XTick',[],'Position',[710,188,498,120]);
 signal_scrn5 = axes('Parent',p1,'Units','Pixels','Color','w','Position',[710,60,498,120]);
 xlabel('Time (sec)');
-expwave_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Export OAPs','Position',[1115 1 100 30],'Callback',{@expwave_button_callback});
-starttimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',12,'String','Start Time','Position',[830 9 55 15]);
-starttimesig_edit = uicontrol('Parent',p1,'Style','edit','FontSize',14,'Position',[890 5 55 23],'Callback',{@starttimesig_edit_callback});
-endtimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',12,'String','End Time','Position',[965 9 52 15]);
-endtimesig_edit = uicontrol('Parent',p1,'Style','edit','FontSize',14,'Position',[1022 5 55 23],'Callback',{@endtimesig_edit_callback});
+expwave_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Export OAPs','Position',[1115 1 100 30],'Callback',{@expwave_button_callback});
+starttimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',11,'String','Start Time','Position',[830 9 55 15]);
+starttimesig_edit = uicontrol('Parent',p1,'Style','edit','FontSize',11,'Position',[890 5 55 23],'Callback',{@starttimesig_edit_callback});
+endtimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',11,'String','End Time','Position',[965 9 52 15]);
+endtimesig_edit = uicontrol('Parent',p1,'Style','edit','FontSize',11,'Position',[1022 5 55 23],'Callback',{@endtimesig_edit_callback});
 
 % Sweep Bar Display for Optical Action Potentials
 sweep_bar = axes ('Parent',p1,'Units','Pixels','Layer','top','Position',[710,55,500,735]);
 set(sweep_bar,'NextPlot','replacechildren','Visible','off')
 
 % Video Control Buttons and Optical Action Potential Display
-play_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Play Movie','Position',[215 141 100 30],'Callback',{@play_button_callback});
-stop_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Stop Movie','Position',[315 141 100 30],'Callback',{@stop_button_callback});
-dispwave_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Display Wave','Position',[415 141 100 30],'Callback',{@dispwave_button_callback});
-expmov_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',12,'String','Export Movie','Position',[515 141 100 30],'Callback',{@expmov_button_callback});
+play_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Play Movie','Position',[215 141 100 30],'Callback',{@play_button_callback});
+stop_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Stop Movie','Position',[315 141 100 30],'Callback',{@stop_button_callback});
+dispwave_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Display Wave','Position',[415 141 100 30],'Callback',{@dispwave_button_callback});
+expmov_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Export Movie','Position',[515 141 100 30],'Callback',{@expmov_button_callback});
 
 % Signal Conditioning Button Group and Buttons
-cond_sig = uibuttongroup('Parent',p1,'Title','Condition Signals','FontSize',12,'Position',[0.01 0.015 .255 .18]);
-removeBG_button = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',12,'String','Remove Background','Position',[5 92 150 25]);
-bg_thresh_label = uicontrol('Parent',cond_sig,'Style','text','FontSize',12,'String','BG Threshold','Position',[32 67 77 25]);
-perc_ex_label = uicontrol('Parent',cond_sig,'Style','text','FontSize',12,'String','EX Threshold','Position',[33 47 76 25]);
-bg_thresh_edit = uicontrol('Parent',cond_sig,'Style','edit','FontSize',12,'String','0.3','Position',[112 75 35 18]);
-perc_ex_edit = uicontrol('Parent',cond_sig,'Style','edit','FontSize',12,'String','0.5','Position',[112 55 35 18]);
-bin_button  = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',12,'String','Bin','Position',[160 92 150 25]);
-filt_button = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',12,'String','Filter','Position',[160 64 150 25]);
-removeDrift_button = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',12,'String','Drift','Position',[160 36 150 25]);
-norm_button  = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',12,'String','Normalize','Position',[5 36 125 15]);
-apply_button = uicontrol('Parent',cond_sig,'Style','pushbutton','FontSize',12,'String','Apply','Position',[3 2 150 30],'Callback',{@cond_sig_selcbk});
+cond_sig = uibuttongroup('Parent',p1,'Title','Condition Signals','FontSize',11,'Position',[0.01 0.015 .255 .18]);
+removeBG_button = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',11,'String','Remove Bkgrd','Position',[5 92 150 25]);
+bg_thresh_label = uicontrol('Parent',cond_sig,'Style','text','FontSize',11,'String','BG','Position',[32 67 77 25]);
+perc_ex_label = uicontrol('Parent',cond_sig,'Style','text','FontSize',11,'String','EX','Position',[33 47 76 25]);
+bg_thresh_edit = uicontrol('Parent',cond_sig,'Style','edit','FontSize',11,'String','0.3','Position',[112 75 35 18]);
+perc_ex_edit = uicontrol('Parent',cond_sig,'Style','edit','FontSize',11,'String','0.5','Position',[112 55 35 18]);
+bin_button  = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',11,'String','Box Blur','Position',[160 92 150 25]);
+filt_button = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',11,'String','Filter','Position',[160 64 150 25]);
+removeDrift_button = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',11,'String','Drift','Position',[160 36 150 25]);
+norm_button  = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',11,'String','Normalize','Position',[5 36 125 15]);
+apply_button = uicontrol('Parent',cond_sig,'Style','pushbutton','FontSize',11,'String','Apply','Position',[3 2 150 30],'Callback',{@cond_sig_selcbk});
 %Pop-up menu options
-bin_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',12,'String',{'3 x 3', '5 x 5', '7 x 7'},'Position',[234 88 75 25]);
-filt_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',12,'String',{'[0 50]','[0 75]', '[0 100]', '[0 150]'},'Position',[219 61 90 25]);
-drift_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',12,'String',{'1st Order','2nd Order', '3rd Order', '4th Order'},'Position',[210 34 99 25]);
-export_button = uicontrol('Parent',cond_sig,'Style','pushbutton','FontSize',12,'String','Export Data','Position',[160 2 145 30],'Callback',{@export_callback});
+bin_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',11,'String',{'3 x 3', '5 x 5', '15 x 15', '45 x 45'},'Position',[234 88 75 25]);
+filt_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',11,'String',{'[0 50]','[0 75]', '[0 100]', '[0 150]'},'Position',[219 61 90 25]);
+drift_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',11,'String',{'1st Order','2nd Order', '3rd Order', '4th Order'},'Position',[210 34 99 25]);
+export_button = uicontrol('Parent',cond_sig,'Style','pushbutton','FontSize',11,'String','Export Data','Position',[160 2 145 30],'Callback',{@export_callback});
 set(filt_popup,'Value',3)
 
 % Optical Action Potential Analysis Button Group and Buttons
 % Create Button Group
-anal_data = uibuttongroup('Parent',p1,'Title','Analyze Data','FontSize',12,'Position',[0.275 0.015 .272 .180]);
+anal_data = uibuttongroup('Parent',p1,'Title','Analyze Data','FontSize',11,'Position',[0.275 0.015 .272 .180]);
 
-anal_select = uicontrol('Parent',anal_data,'Style','popupmenu','FontSize',12,'String',{'-----','Activation','Conduction','APD','Phase','Dominant Frequency'},'Position',[5 85 165 25],'Callback',{@anal_select_callback});
+anal_select = uicontrol('Parent',anal_data,'Style','popupmenu','FontSize',11,'String',{'-----','Activation','Conduction','APD','Phase','Dominant Frequency'},'Position',[5 85 165 25],'Callback',{@anal_select_callback});
 
 % Invert Color Map Option
-invert_cmap = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',12,'String','Invert Colormaps','Position',[175 88 150 25],'Visible','on','Callback',{@invert_cmap_callback});
+invert_cmap = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',11,'String','Invert Colormaps','Position',[175 88 150 25],'Visible','on','Callback',{@invert_cmap_callback});
 
 % Mapping buttons
-starttimemap_text = uicontrol('Parent',anal_data,'Style','text','FontSize',12,'String','Start Time','Position',[12 57 57 25],'Visible','on');
-starttimemap_edit = uicontrol('Parent',anal_data,'Style','edit','FontSize',14,'Position',[72 62 45 22],'Visible','on','Callback',{@maptime_edit_callback});
-endtimemap_text = uicontrol('Parent',anal_data,'Style','text','FontSize',12,'String','End Time','Position',[12 30 54 25],'Visible','on');
-endtimemap_edit = uicontrol('Parent',anal_data,'Style','edit','FontSize',14,'Position',[72 35 45 22],'Visible','on','Callback',{@maptime_edit_callback});
-createmap_button = uicontrol('Parent',anal_data,'Style','pushbutton','FontSize',12,'String','Calculate Map','Position',[10 2 110 30],'Visible','on','Callback',{@createmap_button_callback});
+starttimemap_text = uicontrol('Parent',anal_data,'Style','text','FontSize',11,'String','Start','Position',[12 57 57 25],'Visible','on');
+starttimemap_edit = uicontrol('Parent',anal_data,'Style','edit','FontSize',11,'Position',[72 62 45 22],'Visible','on','Callback',{@maptime_edit_callback});
+endtimemap_text = uicontrol('Parent',anal_data,'Style','text','FontSize',11,'String','End','Position',[12 30 54 25],'Visible','on');
+endtimemap_edit = uicontrol('Parent',anal_data,'Style','edit','FontSize',11,'Position',[72 35 45 22],'Visible','on','Callback',{@maptime_edit_callback});
+createmap_button = uicontrol('Parent',anal_data,'Style','pushbutton','FontSize',11,'String','Calculate Map','Position',[10 2 110 30],'Visible','on','Callback',{@createmap_button_callback});
 % APD specific buttons
-minapd_text = uicontrol('Parent',anal_data,'Style','text','FontSize',12,'String','Min APD','Visible','on','Position',[125 57 57 25]);
-minapd_edit = uicontrol('Parent',anal_data,'Style','edit','FontSize',12,'String','0','Visible','on','Position',[180 62 45 22],'Callback',{@minapd_edit_callback});
-maxapd_text = uicontrol('Parent',anal_data,'Style','text','FontSize',12,'String','Max APD','Visible','on','Position',[125 30 54 25]);
-maxapd_edit = uicontrol('Parent',anal_data,'Style','edit','FontSize',12,'String','1000','Visible','on','Position',[180 35 45 22],'Callback',{@maxapd_edit_callback});
-percentapd_text= uicontrol('Parent',anal_data,'Style','text','FontSize',12,'String','%APD','Visible','on','Position',[230 57 45 25]);
-percentapd_edit= uicontrol('Parent',anal_data,'Style','edit','FontSize',12,'String','0.8','Visible','on','Position',[275 62 45 22],'callback',{@percentapd_edit_callback});
-remove_motion_click = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',12,'String','Remove','Visible','on','Position',[230 35 100 25]);
-remove_motion_click_txt = uicontrol('Parent',anal_data,'Style','text','FontSize',12,'String','Motion','Visible','on','Position',[248 15 50 25]);
-calc_apd_button = uicontrol('Parent',anal_data,'Style','pushbutton','FontSize',12,'String','Regional APD','Position',[125 2 103 30],'Callback',{@calc_apd_button_callback});
+minapd_text = uicontrol('Parent',anal_data,'Style','text','FontSize',11,'String','Min APD','Visible','on','Position',[125 57 57 25]);
+minapd_edit = uicontrol('Parent',anal_data,'Style','edit','FontSize',11,'String','0','Visible','on','Position',[180 62 45 22],'Callback',{@minapd_edit_callback});
+maxapd_text = uicontrol('Parent',anal_data,'Style','text','FontSize',11,'String','Max APD','Visible','on','Position',[125 30 54 25]);
+maxapd_edit = uicontrol('Parent',anal_data,'Style','edit','FontSize',11,'String','1000','Visible','on','Position',[180 35 45 22],'Callback',{@maxapd_edit_callback});
+percentapd_text= uicontrol('Parent',anal_data,'Style','text','FontSize',11,'String','%APD','Visible','on','Position',[230 57 45 25]);
+percentapd_edit= uicontrol('Parent',anal_data,'Style','edit','FontSize',11,'String','0.8','Visible','on','Position',[275 62 45 22],'callback',{@percentapd_edit_callback});
+remove_motion_click = uicontrol('Parent',anal_data,'Style','checkbox','FontSize',11,'String','Remove','Visible','on','Position',[230 35 100 25]);
+remove_motion_click_txt = uicontrol('Parent',anal_data,'Style','text','FontSize',11,'String','Motion','Visible','on','Position',[248 15 50 25]);
+calc_apd_button = uicontrol('Parent',anal_data,'Style','pushbutton','FontSize',11,'String','Regional APD','Position',[125 2 103 30],'Callback',{@calc_apd_button_callback});
 
 % Allow all GUI structures to be scaled when window is dragged
 set([f,p1,filelist,selectdir,refreshdir,loadfile,movie_scrn,movie_slider, signal_scrn1,signal_scrn2,signal_scrn3,...
@@ -209,7 +209,7 @@ handles.apdC = [];  % variable for storing apd calculations
             ps = get(gca,'CurrentPoint');
             i_temp = round(ps(1,1));
             j_temp = round(ps(2,2));
-            if i_temp<=size(handles.cmosData,1) && j_temp<=size(handles.cmosData,2) && i_temp>1 && j_temp>1
+            if i_temp<=size(handles.cmosData,2) && j_temp<=size(handles.cmosData,1) && i_temp>1 && j_temp>1
                 handles.M(handles.grabbed,:) = [i_temp j_temp];
                 i = i_temp;
                 j = j_temp;
@@ -275,16 +275,22 @@ handles.apdC = [];  % variable for storing apd calculations
             % Check for existence of already converted *.mat file
             if exist([filename(1:end-3),'mat'],'file')
                 Data = load([filename(1:end-3),'mat']);
+                handles.cmosData = -1.*double(Data.data(:,:,2:end)); %voltage
+%                 handles.cmosData = double(Data.data(:,:,2:end)); %calcium
+                handles.Fs = Data.Fs;
+                handles.bg = mean(Data.data(:,:,1:4),3); % voltage or calcium? change -1.*
+                andor=1;
                 % Convert data and save out *.mat file
             elseif exist([filename(1:end-3),'sif'],'file')    
                 [~, Data, fps, ~,~,~]=sifopen(filename);
                 cmosData = -1.*Data;
-                cmosData = flipdim(cmosData,1);
+                %cmosData = flipdim(cmosData,1);
                 handles.cmosData = double(cmosData(:,:,2:end));
                 handles.Fs = fps;
                 handles.bg = mean(-1.*cmosData(:,:,1:4),3); 
                 andor=1; % variable to detect if andor data is being used
             else
+                andor=0;
                 CMOSconverter(handles.dir,handles.filename); 
                 Data = load([filename(1:end-3),'mat']);
             end
@@ -320,6 +326,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 % Save out frequency
                 handles.Fs = double(Data.frequency);
             end
+            
             % Save a variable to preserve  the raw cmos data
             handles.cmosRawData = handles.cmosData;
             % Convert background to grayscale 
@@ -373,16 +380,19 @@ handles.apdC = [];  % variable for storing apd calculations
 
 %% Select directory for optical files
     function selectdir_callback(~,~)
-        dir_name = uigetdir;
+%         dir_name = uigetdir; %commented out on 2017-11-29
+        dir_name = '/run/media/lab/Posnack-Heart/Mapping/Dual/';
         if dir_name ~= 0
             handles.dir = dir_name;
             search_name = [dir_name,'/*.rsh'];
             search_nameNew = [dir_name,'/*.gsh'];
             search_nameAndor = [dir_name,'/*.sif']; %adding Andor SIF support
+            search_nameMAT = [dir_name,'/*.mat']; %adding MATLAB raw data, already converted
             files = struct2cell(dir(search_name));
             filesNew = struct2cell(dir(search_nameNew));
             filesAndor = struct2cell(dir(search_nameAndor));
-            handles.file_list = [files(1,:)'; filesNew(1,:)';filesAndor(1,:)'];
+            filesMAT = struct2cell(dir(search_nameMAT));
+            handles.file_list = [files(1,:)'; filesNew(1,:)';filesAndor(1,:)';filesMAT(1,:)'];
             set(filelist,'String',handles.file_list)
             handles.filename = char(handles.file_list(1));
             % enable the refresh directory and load file buttons
@@ -467,6 +477,7 @@ handles.apdC = [];  % variable for storing apd calculations
         end
         I = J .* A + G .* (1 - A);
         image(I,'Parent',movie_scrn);
+        axis('image')
     end
 
 
@@ -537,18 +548,18 @@ handles.apdC = [];  % variable for storing apd calculations
 %% Display Wave Button Functionality
     function dispwave_button_callback(~,~)
         set(f,'CurrentAxes',movie_scrn)
-        [i_temp,j_temp] = myginput(1,'circle');
-        i = round(i_temp); j = round(j_temp);
+        [c_click,r_click] = myginput(1,'circle');
+        c = round(c_click); r = round(r_click); % c=X/width/Columns, r=Y/height/Rows
         
         %make sure pixel selected is within movie_scrn
-        if i_temp>size(handles.cmosData,1) || j_temp>size(handles.cmosData,2) || i_temp<=1 || j_temp<=1
+        if c_click>size(handles.cmosData,2) || r_click>size(handles.cmosData,1) || c_click<=1 || r_click<=1
             % tell user to pick new pixel
             msgbox('Warning: Pixel Selection out of Boundary','Title','help')
         else
             check = 1;
         end
         
-        if check == 1;
+        if check == 1
             % Find the correct wave window
             if handles.wave_window == 6
                 handles.wave_window = 1;
@@ -556,20 +567,20 @@ handles.apdC = [];  % variable for storing apd calculations
             wave_window = handles.wave_window;
             switch wave_window
                 case 1
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'b','LineWidth',2,'Parent',signal_scrn1)
-                    handles.M(1,:) = [i j];
+                    plot(handles.time,squeeze(handles.cmosData(r,c,:)),'b','LineWidth',2,'Parent',signal_scrn1)
+                    handles.M(1,:) = [c r];
                 case 2
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'g','LineWidth',2,'Parent',signal_scrn2)
-                    handles.M(2,:) = [i j];
+                    plot(handles.time,squeeze(handles.cmosData(r,c,:)),'g','LineWidth',2,'Parent',signal_scrn2)
+                    handles.M(2,:) = [c r];
                 case 3
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'m','LineWidth',2,'Parent',signal_scrn3)
-                    handles.M(3,:) = [i j];
+                    plot(handles.time,squeeze(handles.cmosData(r,c,:)),'m','LineWidth',2,'Parent',signal_scrn3)
+                    handles.M(3,:) = [c r];
                 case 4
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'k','LineWidth',2,'Parent',signal_scrn4)
-                    handles.M(4,:) = [i j];
+                    plot(handles.time,squeeze(handles.cmosData(r,c,:)),'k','LineWidth',2,'Parent',signal_scrn4)
+                    handles.M(4,:) = [c r];
                 case 5
-                    plot(handles.time,squeeze(handles.cmosData(j,i,:)),'c','LineWidth',2,'Parent',signal_scrn5)
-                    handles.M(5,:) = [i j];
+                    plot(handles.time,squeeze(handles.cmosData(r,c,:)),'c','LineWidth',2,'Parent',signal_scrn5)
+                    handles.M(5,:) = [c r];
             end
         end
         handles.wave_window = wave_window + 1; % Dial up the wave window count
@@ -677,45 +688,45 @@ handles.apdC = [];  % variable for storing apd calculations
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %% SIGNAL SCREENS
 % %% Start Time Editable Textbox for Signal Screens
-%     function starttimesig_edit_callback(source,~)
-%         %get the val01 (lower limit) and val02 (upper limit) plot values
-%         val01 = str2double(get(source,'String'));
-%         val02 = str2double(get(endtimesig_edit,'String'));
-%         if val01 >= 0 && val01 <= (size(handles.cmosData,3)-1)*handles.Fs
-%             set(signal_scrn1,'XLim',[val01 val02]);
-%             set(signal_scrn2,'XLim',[val01 val02]);
-%             set(signal_scrn3,'XLim',[val01 val02]);
-%             set(signal_scrn4,'XLim',[val01 val02]);
-%             set(signal_scrn5,'XLim',[val01 val02]);
-%             set(sweep_bar,'XLim',[val01 val02]);
-%         else
-%             error = 'The START TIME must be greater than %d and less than %.3f.';
-%             msgbox(sprintf(error,0,max(handles.time)),'Incorrect Input','Warn');
-%             set(source,'String',0)
-%         end
-%         % Update the start time value
-%         handles.starttime = val01;
-%     end
+    function starttimesig_edit_callback(source,~)
+        %get the val01 (lower limit) and val02 (upper limit) plot values
+        val01 = str2double(get(source,'String'));
+        val02 = str2double(get(endtimesig_edit,'String'));
+        if val01 >= 0 && val01 <= (size(handles.cmosData,3)-1)*handles.Fs
+            set(signal_scrn1,'XLim',[val01 val02]);
+            set(signal_scrn2,'XLim',[val01 val02]);
+            set(signal_scrn3,'XLim',[val01 val02]);
+            set(signal_scrn4,'XLim',[val01 val02]);
+            set(signal_scrn5,'XLim',[val01 val02]);
+            set(sweep_bar,'XLim',[val01 val02]);
+        else
+            error = 'The START TIME must be greater than %d and less than %.3f.';
+            msgbox(sprintf(error,0,max(handles.time)),'Incorrect Input','Warn');
+            set(source,'String',0)
+        end
+        % Update the start time value
+        handles.starttime = val01;
+    end
 % 
-% %% End Time Editable Textbox for Signal Screens
-%     function endtimesig_edit_callback(source,~)
-%         val01 = str2double(get(starttimesig_edit,'String'));
-%         val02 = str2double(get(source,'String'));
-%         if val02 >= 0 && val02 <= (size(handles.cmosData,3)-1)*handles.Fs
-%             set(signal_scrn1,'XLim',[val01 val02]);
-%             set(signal_scrn2,'XLim',[val01 val02]);
-%             set(signal_scrn3,'XLim',[val01 val02]);
-%             set(signal_scrn4,'XLim',[val01 val02]);
-%             set(signal_scrn5,'XLim',[val01 val02]);
-%             set(sweep_bar,'XLim',[val01 val02]);
-%         else
-%             error = 'The END TIME must be greater than %d and less than %.3f.';
-%             msgbox(sprintf(error,0,max(handles.time)),'Incorrect Input','Warn');
-%             set(source,'String',max(handles.time))
-%         end
-%         % Update the end time value
-%         handles.endtime = val02;
-%     end
+%% End Time Editable Textbox for Signal Screens
+    function endtimesig_edit_callback(source,~)
+        val01 = str2double(get(starttimesig_edit,'String'));
+        val02 = str2double(get(source,'String'));
+        if val02 >= 0 && val02 <= (size(handles.cmosData,3)-1)*handles.Fs
+            set(signal_scrn1,'XLim',[val01 val02]);
+            set(signal_scrn2,'XLim',[val01 val02]);
+            set(signal_scrn3,'XLim',[val01 val02]);
+            set(signal_scrn4,'XLim',[val01 val02]);
+            set(signal_scrn5,'XLim',[val01 val02]);
+            set(sweep_bar,'XLim',[val01 val02]);
+        else
+            error = 'The END TIME must be greater than %d and less than %.3f.';
+            msgbox(sprintf(error,0,max(handles.time)),'Incorrect Input','Warn');
+            set(source,'String',max(handles.time))
+        end
+        % Update the end time value
+        handles.endtime = val02;
+    end
 
 %% Export signal waves to new screen
     function expwave_button_callback(~,~)
@@ -777,8 +788,10 @@ handles.apdC = [];  % variable for storing apd calculations
             % Update counter % progress bar
             counter = counter + 1;
             waitbar(counter/trackProg,g1,'Binning Data');
-            if bin_pop_state == 3
-                bin_size = 7;
+            if bin_pop_state == 4
+                bin_size = 45;
+            elseif bin_pop_state == 3
+                bin_size = 15;
             elseif bin_pop_state == 2
                 bin_size = 5;
             else
@@ -1003,7 +1016,7 @@ handles.apdC = [];  % variable for storing apd calculations
         if check == 2
             gg=msgbox('Building  Activation Map...');
             % Activation map function
-            aMap(handles.cmosData,handles.a_start,handles.a_end,handles.Fs,handles.bg,handles.cmap);
+            aMap(handles.cmosData,handles.a_start,handles.a_end,handles.Fs,handles.bg,handles.cmap,handles.filename);
             close(gg)
         % FOR CONDUCTION VELOCITY
         elseif check == 3

@@ -15,6 +15,9 @@ function [data] = binning(data,N)
 % with eight points immediately surrounding it. 
 
 %% Code
+% Don't convolve with the background!
+data(data==0) = NaN;
+
 avePattern = ones(N,N);
 for i = 1:size(data,3)
     temp = data(:,:,i);
