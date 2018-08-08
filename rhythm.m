@@ -380,8 +380,8 @@ handles.apdC = [];  % variable for storing apd calculations
 
 %% Select directory for optical files
     function selectdir_callback(~,~)
-%         dir_name = uigetdir; %commented out on 2017-11-29
-        dir_name = '/run/media/lab/Posnack-Heart/Mapping/Dual/';
+        dir_name = uigetdir; %commented out on 2017-11-29
+%         dir_name = '/run/media/lab/Posnack-Heart/Mapping/Dual/';
         if dir_name ~= 0
             handles.dir = dir_name;
             search_name = [dir_name,'/*.rsh'];
