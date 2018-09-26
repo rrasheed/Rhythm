@@ -32,7 +32,11 @@ function filt_data = filter_data(data,Fs,or,lb,hb)
     %% Apply Filter
     temp = reshape(data,[],size(data,3));
     filt_temp = zeros(size(temp));
-    for i = 1:size(temp,1)
+    % Use parpool and parfor for parallel computation
+    % gcp returns the current pool or creates one
+    poolobj = gcp;
+
+    parfor i = 1:size(temp,1)
         if sum(temp(i,:)) ~= 0
         filt_temp(i,:) = filtfilt(b,a,temp(i,:)); % needed to create 0 phase offset
         end
