@@ -1,4 +1,4 @@
-function [actMap1] = aMap(data,stat,endp,Fs,bg,cmap,filename,dir)
+function [actMap1] = aMap(data,startt,endt,Fs,bg,cmap,filename,dir)
 %% aMap is the central function for creating conduction velocity maps
 % [actMap1] = aMap(data,stat,endp,Fs,bg) calculates the activation map
 % for a single action potential upstroke.
@@ -50,8 +50,8 @@ function [actMap1] = aMap(data,stat,endp,Fs,bg,cmap,filename,dir)
 
 %% Code
 % Create initial variables
-stat=round(stat*Fs);
-endp=round(endp*Fs);
+stat=round(startt*Fs);
+endp=round(endt*Fs);
 actMap = zeros(size(data,1),size(data,2));
 mask2 = zeros(size(data,1),size(data,2));
 temp = data(:,:,stat:endp); % windowed signal
@@ -81,9 +81,10 @@ actMap1 = actMap1 - offset1*ones(size(data,1),size(data,2));
 actMap1 = actMap1/Fs*1000; %% time in ms
 
 % Plot Map
-zz = figure('Name','Activation Map');
+actMapPeriod = " " + num2str(round(startt, 3)) + " - " + num2str(round(endt, 3));
+zz = figure('Name',strcat('Activation Map: ',actMapPeriod));
 contourf(flipud(actMap1),endp-stat,'LineColor','none')
-title('Activation Map')
+title(strcat('Activation Map: ',actMapPeriod))
 axis image
 axis off
 colormap(cmap);
@@ -92,15 +93,22 @@ colorbar;
 % User prompt for input to create csv
 prompt1 = {'Save activation map for CV analysis?'};
 dlg_title1 = 'Save activation map';
-num_lines1 = 1;
+num_lines1 = [1 60];
 direc=dir;
-def1 = {strcat(direc,'\ActMaps\ActMap-',filename,'.csv')};
+file = strtok(filename,'.');    % Get filename without extension 
+def1 = {strcat(direc,'/ActMaps/ActMap-',file,'.csv')};
 answer = inputdlg(prompt1,dlg_title1,num_lines1,def1);
 % process user inputs
 if isempty(answer)      % cancel save if user clicks "cancel"
     return
 end
 filename = answer{1};
+
+% create the ActMaps folder if it doesn't exist already.
+newSubFolder = strcat(direc,'/ActMaps/');
+if ~exist(newSubFolder, 'dir')
+  mkdir(newSubFolder);
+end
 csvwrite(filename,actMap1);
 
 

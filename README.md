@@ -12,7 +12,4 @@ We recommend the latest release of 64-bit MATLAB on a 64-bit machine. We have te
 
 # Contributions
 If you would like to contribute to this project, please contact Dr. Igor Efimov at igor@wustl.edu. If you find this code helpful, please reference our review paper describing proper analysis of optical mapping data found at http://www.ncbi.nlm.nih.gov/pubmed/22821993
-
-# Nottice!!!
-Until we can fully perfect the use of Github distribution, we recommend the URL (Google Drive) below for the most up-to-date release of Rhythm
-https://drive.google.com/folderview?id=0BxA1B_i6ZEvlflptaFlBUlJVNTUtTVUyQzJldnNGc3hneldhVHhVNmhhTjV2M3VmNHY5TlE&usp=sharing
+Modified by Damon McCullough

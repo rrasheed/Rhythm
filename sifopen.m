@@ -28,8 +28,8 @@ end
 
 rc=atsif_setfileaccessmode(0);
 rc=atsif_readfromfile(source);
-if (rc == 22002)
-%     disp('SIF File Found')
+if (rc == 22002)    
+    fprintf('\nsifopen called on:\n%s',source);
     [~,loaded] = atsif_isloaded();
         if loaded
             %signal=0, ref=1, backgd=2, 3=source, 4=live;
@@ -49,6 +49,10 @@ if (rc == 22002)
             data3=reshape(data, (right-left+1)/hBin, (top-bottom+1)/vBin, noframes);
         end 
     atsif_closefile();
+    % correct printing formatting
+    fprintf('\nImage size: %s', size);
+    fprintf('\nVideo frames: %s', noframes);
+    fprintf('\nFPS: %s', fps);
 end     
    
 if (rc == 22003)

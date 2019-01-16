@@ -68,12 +68,13 @@ signal_scrn3 = axes('Parent',p1,'Units','Pixels','Color','w','XTick',[],'Positio
 signal_scrn4 = axes('Parent',p1,'Units','Pixels','Color','w','XTick',[],'Position',[710,188,498,120]);
 signal_scrn5 = axes('Parent',p1,'Units','Pixels','Color','w','Position',[710,60,498,120]);
 xlabel('Time (sec)');
-expwave_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Export OAPs','Position',[1115 1 100 30],'Callback',{@expwave_button_callback});
+expwave_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Export OAPs','Position',[1115 1 90 30],'Callback',{@expwave_button_callback});
 expwavecsv_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Export OAP CSVs','Position',[720 1 110 30],'Callback',{@expwavecsv_button_callback});
 starttimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',11,'String','Start Time','Position',[830 9 55 15]);
 starttimesig_edit = uicontrol('Parent',p1,'Style','edit','FontSize',11,'Position',[890 5 55 23],'Callback',{@starttimesig_edit_callback});
-endtimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',11,'String','End Time','Position',[965 9 52 15]);
-endtimesig_edit = uicontrol('Parent',p1,'Style','edit','FontSize',11,'Position',[1022 5 55 23],'Callback',{@endtimesig_edit_callback});
+endtimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',11,'String','End Time','Position',[945 9 52 15]);
+endtimesig_edit = uicontrol('Parent',p1,'Style','edit','FontSize',11,'Position',[1000 5 55 23],'Callback',{@endtimesig_edit_callback});
+resettime_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Reset','Position',[1055 1 50 30],'Callback',{@resettime_button_callback});
 
 % Sweep Bar Display for Optical Action Potentials
 sweep_bar = axes ('Parent',p1,'Units','Pixels','Layer','top','Position',[710,55,500,735]);
@@ -137,14 +138,14 @@ set([f,p1,filelist,selectdir,refreshdir,loadfile, togbDataType,movie_scrn,movie_
     apply_button,bin_popup,filt_popup,drift_popup,export_button,anal_data,anal_select,invert_cmap,starttimemap_text,...
     starttimemap_edit,endtimemap_text,endtimemap_edit,createmap_button,minapd_text,minapd_edit,maxapd_text,maxapd_edit,...
     percentapd_text,percentapd_edit,remove_motion_click,remove_motion_click_txt,calc_apd_button,expwave_button,expwavecsv_button,...
-    starttimesig_text,starttimesig_edit,endtimesig_text,endtimesig_edit],'Units','normalized')
+    starttimesig_text,starttimesig_edit,endtimesig_text,endtimesig_edit,resettime_button],'Units','normalized')
 
 % Disable buttons that will not be needed until data is loaded
 set([removeBG_button,bg_thresh_edit,bg_thresh_label,perc_ex_edit,perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
     apply_button,bin_popup,filt_popup,drift_popup,anal_select,starttimemap_edit,starttimemap_text,endtimemap_edit,endtimemap_text,...
     createmap_button,minapd_edit,minapd_text,maxapd_edit,maxapd_text,percentapd_edit,percentapd_text,remove_motion_click,remove_motion_click_txt,...
     calc_apd_button,play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,endtimesig_edit,expwave_button,expwavecsv_button,loadfile,...
-    refreshdir,invert_cmap,export_button],'Enable','off')
+    refreshdir,invert_cmap,export_button,resettime_button],'Enable','off')
 
 % Hide all analysis buttons
 set([invert_cmap,starttimemap_text,starttimemap_edit,endtimemap_text,...
@@ -245,6 +246,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 end
                 cla
                 currentframe = handles.frame;
+                currentTime = currentframe*1/handles.Fs;
                 drawFrame(currentframe);
                 M = handles.M; colax='bgmkc'; [a,~]=size(M);
                 hold on
@@ -294,7 +296,7 @@ handles.apdC = [];  % variable for storing apd calculations
             cla(movie_scrn); cla(signal_scrn1); cla(signal_scrn2); cla(signal_scrn3)
             cla(signal_scrn4); cla(signal_scrn5);  cla(sweep_bar)
             % Initialize handles
-            handles.M = []; % this handle stores the locations of the markers
+%             handles.M = []; % this handle stores the locations of the markers
             handles.normflag = 0;% this handle indicate if normalize is clicked
             handles.wave_window = 1;% this handle indicate the window number of the next wave displayed
             handles.frame = 1;% this handles indicate the current frame being displayed by the movie screen
@@ -320,7 +322,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 handles.Fs = fps;
                 handles.bg = mean(-1.*cmosData(:,:,1:4),3); 
                 andor=1; % variable to detect if andor data is being used
-            elseif exist([filename(1:end-3),'tif'],'file')    
+            elseif exist([filename(1:end-3),'tif'],'file') || exist([filename(1:end-3),'tiff'],'file')
                 [Data, fps, ~,~]=tifopen(filename);
                 if(handles.dataType == 'v')
                     cmosData = -1.*double(Data); % For Voltage
@@ -341,8 +343,6 @@ handles.apdC = [];  % variable for storing apd calculations
                 CMOSconverter(handles.dir,handles.filename); 
                 Data = load([filename(1:end-3),'mat']);
             end
-            % Load data from *.mat file
-
             
             % Check for dual camera data
             if isfield(Data,'cmosData2')
@@ -421,7 +421,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
                 apply_button,bin_popup,filt_popup,drift_popup,play_button,anal_select,...
                 stop_button,dispwave_button,expmov_button,starttimesig_edit,...
-                endtimesig_edit,expwave_button,expwavecsv_button,export_button],'Enable','on')
+                endtimesig_edit,resettime_button,expwave_button,expwavecsv_button,export_button],'Enable','on')
         end
     end
 
@@ -460,7 +460,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 createmap_button,minapd_edit,minapd_text,maxapd_edit,maxapd_text,...
                 percentapd_edit,percentapd_text,remove_motion_click,remove_motion_click_txt,...
                 play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,...
-                endtimesig_edit,expwave_button,expwavecsv_button,invert_cmap,export_button],'Enable','off')
+                endtimesig_edit,resettime_button,expwave_button,expwavecsv_button,invert_cmap,export_button],'Enable','off')
         end
     end
 
@@ -526,6 +526,9 @@ handles.apdC = [];  % variable for storing apd calculations
         end
         I = J .* A + G .* (1 - A);
         image(I,'Parent',movie_scrn);
+        % Show current frame's timestamp at bottom right
+        currentTime = frame * 1/handles.Fs;
+        set(stop_button,'string',num2str(currentTime))
         axis('image')
     end
 
@@ -600,7 +603,7 @@ handles.apdC = [];  % variable for storing apd calculations
         [c_click,r_click] = myginput(1,'circle');
         c = round(c_click); r = round(r_click); % c=X/width/Columns, r=Y/height/Rows
         
-        %make sure pixel selected is within movie_scrn
+        % ensure pixel selected is within movie_scrn
         if c_click>size(handles.cmosData,2) || r_click>size(handles.cmosData,1) || c_click<=1 || r_click<=1
             % tell user to pick new pixel
             msgbox('Warning: Pixel Selection out of Boundary','Title','help')
@@ -614,6 +617,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 handles.wave_window = 1;
             end
             wave_window = handles.wave_window;
+            % Show pixel location on Y axis of each wave window
             switch wave_window
                 case 1
                     plot(handles.time,squeeze(handles.cmosData(r,c,:)),'b','LineWidth',2,'Parent',signal_scrn1)
@@ -787,6 +791,32 @@ handles.apdC = [];  % variable for storing apd calculations
         handles.endtime = val02;
     end
 
+        
+%% Reset time range for Signal Screens
+    function resettime_button_callback(~,~)
+       timeStep = 1/handles.Fs;
+       handles.time = 0:timeStep:size(handles.cmosData,3)*timeStep-timeStep;
+       set(signal_scrn1,'XLim',[min(handles.time) max(handles.time)])
+       set(signal_scrn1,'NextPlot','replacechildren')
+       set(signal_scrn2,'XLim',[min(handles.time) max(handles.time)])
+       set(signal_scrn2,'NextPlot','replacechildren')
+       set(signal_scrn3,'XLim',[min(handles.time) max(handles.time)])
+       set(signal_scrn3,'NextPlot','replacechildren')
+       set(signal_scrn4,'XLim',[min(handles.time) max(handles.time)])
+       set(signal_scrn4,'NextPlot','replacechildren')
+       set(signal_scrn5,'XLim',[min(handles.time) max(handles.time)])
+       set(signal_scrn5,'NextPlot','replacechildren')
+       set(sweep_bar,'XLim',[min(handles.time) max(handles.time)])
+       set(sweep_bar,'NextPlot','replacechildren')
+       % Fill times into activation map editable textboxes
+       handles.starttime = 0;
+       handles.endtime = max(handles.time);
+       set(starttimesig_edit,'String',num2str(handles.starttime))
+       set(endtimesig_edit,'String',num2str(handles.endtime))
+       set(starttimemap_edit,'String',num2str(handles.starttime))
+       set(endtimemap_edit,'String',num2str(handles.endtime))
+    end
+
 %% Export signal waves to new screen
     function expwave_button_callback(~,~)
         M = handles.M; colax='bgmkc'; [a,~]=size(M);
@@ -806,6 +836,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 end
             end
             xlabel('Time (sec)')
+            xtick()
             hold off
             movegui(w,'center')
             set(w,'Visible','on')
@@ -825,10 +856,12 @@ handles.apdC = [];  % variable for storing apd calculations
             prompt1 = {'Save current signal waves as CSV?'};
             dlg_title1 = 'Save signal CSV';
             num_lines1 = [1 60];
-            %direc='/home/lab/Documents/Langendorff-MEHP/ActMaps/';
             % Uses directory chosen for image sources
             direc=handles.dir;
-            def1 = {strcat(direc,'\Signals-',handles.filename,'.csv')};
+            file = strtok(handles.filename,'.');    % Get filename without extension 
+            handleXY = strsplit(int2str(handles.M(1,:)), ' ');
+            file = strcat(file,'x',handleXY(1),'y',handleXY(2));    % Add marker coordinate to filename
+            def1 = strcat(direc,'/Signals/',file,'.csv');
             answer = inputdlg(prompt1,dlg_title1,num_lines1,def1);
             % process user inputs
             if isempty(answer)      % cancel save if user clicks "cancel"
@@ -836,19 +869,26 @@ handles.apdC = [];  % variable for storing apd calculations
             end
             filename = answer{1};
             filenameTemp = strsplit(filename,'.');
-            filenameTime = strcat(filenameTemp{1},'times','.csv');
-            % write time series to its own csv
-            startp = round(handles.starttime*handles.Fs);
+            % Get time series (in sec)
+            t = flip(rot90(handles.starttime:1/handles.Fs:handles.endtime))
+            % Get frames of interest
+            startp = max([round(handles.starttime*handles.Fs) 1]);   % 1st frame minimum
             endp = round(handles.endtime*handles.Fs);
-            t = flip(rot90(handles.starttime:1/handles.Fs:handles.endtime));
-            csvwrite(filenameTime,t);
+            % Add time and signal arrays into a final 2-D array
+            signalData = squeeze(handles.cmosData(M(1,2),M(1,1),startp:endp-1));
+            time = t(1:length(signalData));
+            csvData = [time signalData];
             
-            for x = 1:a
-                % write each plot's data over the time series
-                % TODO correct so every signal is writen to a column
-                % TODO include marker coordinate in filename
-                csvwrite(filename,squeeze(handles.cmosData(M(x,2),M(x,1),startp:endp-1)));
+            % create the Signals folder if it doesn't exist already.
+            newSubFolder = strcat(direc,'/Signals/');
+            if ~exist(newSubFolder, 'dir')
+              mkdir(newSubFolder);
             end
+            csvwrite(filename,csvData);
+%             for x = 1:a
+%                 % write each plot's data over the time series
+%                 % TODO correct so every signal is writen to a column
+%             end
             
         end
     end
