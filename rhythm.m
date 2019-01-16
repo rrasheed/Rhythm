@@ -31,7 +31,7 @@ function rhythm
 % Feb. 24, 2016 - The GUI has been streamlined to reduce clutter and create
 % a space for plugins created by future users.
 %
-%
+% Jan. 16, 2019 - Several changes to UI. Damon McCullough
 
 %% Create GUI structure
 scrn_size = get(0,'ScreenSize');
