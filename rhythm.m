@@ -1,7 +1,6 @@
 function rhythm
 % close all; clc;
 %% RHYTHM (01/27/2012)
-%test on github
 % Matlab software for analyzing optical mapping data
 %
 % By Matt Sulkin, Jake Laughner, Xinyuan Sophia Cui, Jed Jackoway
