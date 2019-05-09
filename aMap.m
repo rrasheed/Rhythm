@@ -1,4 +1,4 @@
-function [actMap1] = aMap(data,stat,endp,Fs,bg,cmap,filename)
+function [actMap1] = aMap(data,stat,endp,Fs,bg,cmap,filename,dir)
 %% aMap is the central function for creating conduction velocity maps
 % [actMap1] = aMap(data,stat,endp,Fs,bg) calculates the activation map
 % for a single action potential upstroke.
@@ -18,6 +18,8 @@ function [actMap1] = aMap(data,stat,endp,Fs,bg,cmap,filename)
 %
 % cmap = a colormap input that facilites the potential inversion of the
 % colormap. cmap is stored in the handles structure as handles.cmap.
+%
+% dir = directory to output csv to
 %
 %
 % OUTPUT
@@ -91,8 +93,8 @@ colorbar;
 prompt1 = {'Save activation map for CV analysis?'};
 dlg_title1 = 'Save activation map';
 num_lines1 = 1;
-direc='/home/lab/Documents/Langendorff-MEHP/ActMaps/';
-def1 = {strcat(direc,'ActMap-',filename,'.csv')};
+direc=dir;
+def1 = {strcat(direc,'\ActMaps\ActMap-',filename,'.csv')};
 answer = inputdlg(prompt1,dlg_title1,num_lines1,def1);
 % process user inputs
 if isempty(answer)      % cancel save if user clicks "cancel"

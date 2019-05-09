@@ -42,8 +42,12 @@ f = figure('Name','RHYTHM','Visible','off','Position',[scrn_size(3),scrn_size(4)
 p1 = uipanel('Title','Display Data','FontSize',11,'Position',[.01 .01 .98 .98]);
 filelist = uicontrol('Parent',p1,'Style','listbox','String','Files','Position',[10 240 150 450],'Callback',{@filelist_callback});
 selectdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Select Directory','Position',[10 205 150 30],'Callback',{@selectdir_callback});
-loadfile = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Load','Position',[10 175 150 30],'Callback',{@loadfile_callback});
+loadfile = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Load','Position',[85 175 75 30],'Callback',{@loadfile_callback});
 refreshdir = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Refresh Directory','Position',[10 145 150 30],'Callback',{@refreshdir_callback});
+
+togbDataType = uicontrol('Parent',p1,'Style', 'togglebutton','FontSize',11,'String', 'Voltage', 'Position', [10 175 75 30], 'Callback', {@TogB_data});
+set(togbDataType, 'value',1);   % Set to On (Voltage) state
+
 
 % Movie Screen for Optical Data
 movie_scrn = axes('Parent',p1,'Units','Pixels','YTick',[],'XTick',[],'Position',[170, 190, 500,500]);
@@ -65,6 +69,7 @@ signal_scrn4 = axes('Parent',p1,'Units','Pixels','Color','w','XTick',[],'Positio
 signal_scrn5 = axes('Parent',p1,'Units','Pixels','Color','w','Position',[710,60,498,120]);
 xlabel('Time (sec)');
 expwave_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Export OAPs','Position',[1115 1 100 30],'Callback',{@expwave_button_callback});
+expwavecsv_button = uicontrol('Parent',p1,'Style','pushbutton','FontSize',11,'String','Export OAP CSVs','Position',[720 1 110 30],'Callback',{@expwavecsv_button_callback});
 starttimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',11,'String','Start Time','Position',[830 9 55 15]);
 starttimesig_edit = uicontrol('Parent',p1,'Style','edit','FontSize',11,'Position',[890 5 55 23],'Callback',{@starttimesig_edit_callback});
 endtimesig_text = uicontrol('Parent',p1,'Style','text','FontSize',11,'String','End Time','Position',[965 9 52 15]);
@@ -93,7 +98,7 @@ removeDrift_button = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',1
 norm_button  = uicontrol('Parent',cond_sig,'Style','checkbox','FontSize',11,'String','Normalize','Position',[5 36 125 15]);
 apply_button = uicontrol('Parent',cond_sig,'Style','pushbutton','FontSize',11,'String','Apply','Position',[3 2 150 30],'Callback',{@cond_sig_selcbk});
 %Pop-up menu options
-bin_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',11,'String',{'3 x 3', '5 x 5', '15 x 15', '45 x 45'},'Position',[234 88 75 25]);
+bin_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',11,'String',{'3 x 3', '5 x 5', '7 x 7', '9 x 9', '15 x 15', '45 x 45'},'Position',[234 88 75 25]);
 filt_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',11,'String',{'[0 50]','[0 75]', '[0 100]', '[0 150]'},'Position',[219 61 90 25]);
 drift_popup = uicontrol('Parent',cond_sig,'Style','popupmenu','FontSize',11,'String',{'1st Order','2nd Order', '3rd Order', '4th Order'},'Position',[210 34 99 25]);
 export_button = uicontrol('Parent',cond_sig,'Style','pushbutton','FontSize',11,'String','Export Data','Position',[160 2 145 30],'Callback',{@export_callback});
@@ -126,19 +131,19 @@ remove_motion_click_txt = uicontrol('Parent',anal_data,'Style','text','FontSize'
 calc_apd_button = uicontrol('Parent',anal_data,'Style','pushbutton','FontSize',11,'String','Regional APD','Position',[125 2 103 30],'Callback',{@calc_apd_button_callback});
 
 % Allow all GUI structures to be scaled when window is dragged
-set([f,p1,filelist,selectdir,refreshdir,loadfile,movie_scrn,movie_slider, signal_scrn1,signal_scrn2,signal_scrn3,...
+set([f,p1,filelist,selectdir,refreshdir,loadfile, togbDataType,movie_scrn,movie_slider, signal_scrn1,signal_scrn2,signal_scrn3,...
     signal_scrn4,signal_scrn5,sweep_bar,play_button,stop_button,dispwave_button,expmov_button,cond_sig,removeBG_button,...
     bg_thresh_label,perc_ex_label,bg_thresh_edit,perc_ex_edit,bin_button,filt_button,removeDrift_button,norm_button,...
     apply_button,bin_popup,filt_popup,drift_popup,export_button,anal_data,anal_select,invert_cmap,starttimemap_text,...
     starttimemap_edit,endtimemap_text,endtimemap_edit,createmap_button,minapd_text,minapd_edit,maxapd_text,maxapd_edit,...
-    percentapd_text,percentapd_edit,remove_motion_click,remove_motion_click_txt,calc_apd_button,expwave_button,...
+    percentapd_text,percentapd_edit,remove_motion_click,remove_motion_click_txt,calc_apd_button,expwave_button,expwavecsv_button,...
     starttimesig_text,starttimesig_edit,endtimesig_text,endtimesig_edit],'Units','normalized')
 
 % Disable buttons that will not be needed until data is loaded
 set([removeBG_button,bg_thresh_edit,bg_thresh_label,perc_ex_edit,perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
     apply_button,bin_popup,filt_popup,drift_popup,anal_select,starttimemap_edit,starttimemap_text,endtimemap_edit,endtimemap_text,...
     createmap_button,minapd_edit,minapd_text,maxapd_edit,maxapd_text,percentapd_edit,percentapd_text,remove_motion_click,remove_motion_click_txt,...
-    calc_apd_button,play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,endtimesig_edit,expwave_button,loadfile,...
+    calc_apd_button,play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,endtimesig_edit,expwave_button,expwavecsv_button,loadfile,...
     refreshdir,invert_cmap,export_button],'Enable','off')
 
 % Hide all analysis buttons
@@ -156,6 +161,7 @@ set(f,'Visible','on')
 handles.filename = [];
 handles.cmosData = [];
 handles.rawData = [];
+handles.dataType = 'v'; % v for voltage, c for calcium
 handles.time = [];
 handles.wave_window = 1;
 handles.normflag = 0;
@@ -184,11 +190,13 @@ handles.apdC = [];  % variable for storing apd calculations
         ps = get(gca,'CurrentPoint');
         i_temp = round(ps(1,1));
         j_temp = round(ps(2,2));
+        pad = 3;
         % if one of the markers on the movie screen is clicked
         if i_temp<=size(handles.cmosData,1) || j_temp<size(handles.cmosData,2) || i_temp>1 || j_temp>1
             if size(handles.M,1) > 0
                 for i=1:size(handles.M,1)
-                    if i_temp == handles.M(i,1) && handles.M(i,2) == j_temp
+                    % if i_temp == handles.M(i,1) && handles.M(i,2) == j_temp
+                    if ((i_temp > handles.M(i,1) - pad) && (i_temp < handles.M(i,1) + pad)) && ((j_temp > handles.M(i,2) - pad) && (j_temp < handles.M(i,2) + pad))
                         handles.grabbed = i;
                         break
                     end
@@ -215,19 +223,24 @@ handles.apdC = [];  % variable for storing apd calculations
                 j = j_temp;
                 switch handles.grabbed
                     case 1
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'b','LineWidth',2,'Parent',signal_scrn1)
+                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'b','LineWidth',2,'Parent',signal_scrn1)                    
+                        signal_scrn1.YLabel.String = int2str([i j]);
                         handles.M(1,:) = [i j];
                     case 2
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'g','LineWidth',2,'Parent',signal_scrn2)
+                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'g','LineWidth',2,'Parent',signal_scrn2)                    
+                        signal_scrn2.YLabel.String = int2str([i j]);
                         handles.M(2,:) = [i j];
                     case 3
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'m','LineWidth',2,'Parent',signal_scrn3)
+                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'m','LineWidth',2,'Parent',signal_scrn3)                    
+                        signal_scrn3.YLabel.String = int2str([i j]);
                         handles.M(3,:) = [i j];
                     case 4
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'k','LineWidth',2,'Parent',signal_scrn4)
+                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'k','LineWidth',2,'Parent',signal_scrn4)                    
+                        signal_scrn4.YLabel.String = int2str([i j]);
                         handles.M(4,:) = [i j];
                     case 5
-                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'c','LineWidth',2,'Parent',signal_scrn5)
+                        plot(handles.time,squeeze(handles.cmosData(j,i,:)),'c','LineWidth',2,'Parent',signal_scrn5)                    
+                        signal_scrn5.YLabel.String = int2str([i j]);
                         handles.M(5,:) = [i j];
                 end
                 cla
@@ -255,6 +268,23 @@ handles.apdC = [];  % variable for storing apd calculations
         handles.filename = file;
     end
 
+
+%% Choose data type: voltage or calcium
+    function TogB_data(hObject,event)
+        % hObject    handle to togglebutton1 (see GCBO)
+        % eventdata  reserved - to be defined in a future version of MATLAB
+        % handles    structure with handles and user data (see GUIDATA)
+
+        button_state = get(hObject,'Value');
+        if button_state == get(hObject,'Max') % Voltage chosen
+            handles.dataType = 'v'
+            set(togbDataType, 'String', 'Voltage');
+        elseif button_state == get(hObject,'Min') % Calcium chosen
+            handles.dataType = 'c'
+            set(togbDataType, 'String', 'Calcium');
+        end
+    end
+
 %% Load selected files in filelist
     function loadfile_callback(~,~)
         if isempty(handles.filename)
@@ -272,6 +302,7 @@ handles.apdC = [];  % variable for storing apd calculations
             % Check for *.mat file, if none convert
             filename = [handles.dir,'/',handles.filename];
             
+            
             % Check for existence of already converted *.mat file
             if exist([filename(1:end-3),'mat'],'file')
                 Data = load([filename(1:end-3),'mat']);
@@ -288,6 +319,22 @@ handles.apdC = [];  % variable for storing apd calculations
                 handles.cmosData = double(cmosData(:,:,2:end));
                 handles.Fs = fps;
                 handles.bg = mean(-1.*cmosData(:,:,1:4),3); 
+                andor=1; % variable to detect if andor data is being used
+            elseif exist([filename(1:end-3),'tif'],'file')    
+                [Data, fps, ~,~]=tifopen(filename);
+                if(handles.dataType == 'v')
+                    cmosData = -1.*double(Data); % For Voltage
+                    %cmosData = flipdim(cmosData,1);
+                    handles.cmosData = double(cmosData(:,:,2:end));
+                    handles.Fs = fps;
+                    handles.bg = mean(-1.*cmosData(:,:,1:4),3); % For Voltage
+                else
+                    cmosData = double(Data); % For Calcium
+                    %cmosData = flipdim(cmosData,1);
+                    handles.cmosData = double(cmosData(:,:,2:end));
+                    handles.Fs = fps;
+                    handles.bg = mean(cmosData(:,:,1:4),3); % For Calcium
+                end
                 andor=1; % variable to detect if andor data is being used
             else
                 andor=0;
@@ -374,25 +421,27 @@ handles.apdC = [];  % variable for storing apd calculations
                 perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
                 apply_button,bin_popup,filt_popup,drift_popup,play_button,anal_select,...
                 stop_button,dispwave_button,expmov_button,starttimesig_edit,...
-                endtimesig_edit,expwave_button,export_button],'Enable','on')
+                endtimesig_edit,expwave_button,expwavecsv_button,export_button],'Enable','on')
         end
     end
 
 %% Select directory for optical files
     function selectdir_callback(~,~)
-%         dir_name = uigetdir; %commented out on 2017-11-29
-        dir_name = '/run/media/lab/Posnack-Heart/Mapping/Dual/';
+        dir_name = uigetdir; %commented out on 2017-11-29
+%         dir_name = '/run/media/lab/Posnack-Heart/Mapping/Dual/';
         if dir_name ~= 0
             handles.dir = dir_name;
             search_name = [dir_name,'/*.rsh'];
             search_nameNew = [dir_name,'/*.gsh'];
             search_nameAndor = [dir_name,'/*.sif']; %adding Andor SIF support
+            search_nameTif = [dir_name,'/*.tif']; %adding TIF support
             search_nameMAT = [dir_name,'/*.mat']; %adding MATLAB raw data, already converted
             files = struct2cell(dir(search_name));
             filesNew = struct2cell(dir(search_nameNew));
             filesAndor = struct2cell(dir(search_nameAndor));
+            filesTif = struct2cell(dir(search_nameTif));
             filesMAT = struct2cell(dir(search_nameMAT));
-            handles.file_list = [files(1,:)'; filesNew(1,:)';filesAndor(1,:)';filesMAT(1,:)'];
+            handles.file_list = [files(1,:)'; filesNew(1,:)';filesAndor(1,:)';filesTif(1,:)';filesMAT(1,:)'];
             set(filelist,'String',handles.file_list)
             handles.filename = char(handles.file_list(1));
             % enable the refresh directory and load file buttons
@@ -411,7 +460,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 createmap_button,minapd_edit,minapd_text,maxapd_edit,maxapd_text,...
                 percentapd_edit,percentapd_text,remove_motion_click,remove_motion_click_txt,...
                 play_button,stop_button,dispwave_button,expmov_button,starttimesig_edit,...
-                endtimesig_edit,expwave_button,invert_cmap,export_button],'Enable','off')
+                endtimesig_edit,expwave_button,expwavecsv_button,invert_cmap,export_button],'Enable','off')
         end
     end
 
@@ -569,18 +618,28 @@ handles.apdC = [];  % variable for storing apd calculations
                 case 1
                     plot(handles.time,squeeze(handles.cmosData(r,c,:)),'b','LineWidth',2,'Parent',signal_scrn1)
                     handles.M(1,:) = [c r];
+                    signal_scrn1.YLabel.FontSize = 8;
+                    signal_scrn1.YLabel.String = int2str([c r]);
                 case 2
                     plot(handles.time,squeeze(handles.cmosData(r,c,:)),'g','LineWidth',2,'Parent',signal_scrn2)
                     handles.M(2,:) = [c r];
+                    signal_scrn2.YLabel.FontSize = 8;
+                    signal_scrn2.YLabel.String = int2str([c r]);
                 case 3
                     plot(handles.time,squeeze(handles.cmosData(r,c,:)),'m','LineWidth',2,'Parent',signal_scrn3)
                     handles.M(3,:) = [c r];
+                    signal_scrn3.YLabel.FontSize = 8;
+                    signal_scrn3.YLabel.String = int2str([c r]);
                 case 4
                     plot(handles.time,squeeze(handles.cmosData(r,c,:)),'k','LineWidth',2,'Parent',signal_scrn4)
                     handles.M(4,:) = [c r];
+                    signal_scrn4.YLabel.FontSize = 8;
+                    signal_scrn4.YLabel.String = int2str([c r]);
                 case 5
                     plot(handles.time,squeeze(handles.cmosData(r,c,:)),'c','LineWidth',2,'Parent',signal_scrn5)
                     handles.M(5,:) = [c r];
+                    signal_scrn5.YLabel.FontSize = 8;
+                    signal_scrn5.YLabel.String = int2str([c r]);
             end
         end
         handles.wave_window = wave_window + 1; % Dial up the wave window count
@@ -753,6 +812,46 @@ handles.apdC = [];  % variable for storing apd calculations
         end
     end
 
+%% Export signal waves to CSV
+    function expwavecsv_button_callback(~,~)
+        % Modeled after aMap function
+        % aMap(handles.cmosData,handles.a_start,handles.a_end,handles.Fs,handles.bg,handles.cmap,handles.filename,handles.dir);
+        M = handles.M; [a,~]=size(M);
+        
+        if isempty(M)
+            msgbox('No wave to export. Please use "Display Wave" button to select pixels on movie screen.','Icon','help')
+        else
+            % User prompt for input to create csv
+            prompt1 = {'Save current signal waves as CSV?'};
+            dlg_title1 = 'Save signal CSV';
+            num_lines1 = [1 60];
+            %direc='/home/lab/Documents/Langendorff-MEHP/ActMaps/';
+            % Uses directory chosen for image sources
+            direc=handles.dir;
+            def1 = {strcat(direc,'\Signals-',handles.filename,'.csv')};
+            answer = inputdlg(prompt1,dlg_title1,num_lines1,def1);
+            % process user inputs
+            if isempty(answer)      % cancel save if user clicks "cancel"
+                return
+            end
+            filename = answer{1};
+            filenameTemp = strsplit(filename,'.');
+            filenameTime = strcat(filenameTemp{1},'times','.csv');
+            % write time series to its own csv
+            startp = round(handles.starttime*handles.Fs);
+            endp = round(handles.endtime*handles.Fs);
+            t = flip(rot90(handles.starttime:1/handles.Fs:handles.endtime));
+            csvwrite(filenameTime,t);
+            
+            for x = 1:a
+                % write each plot's data over the time series
+                % TODO correct so every signal is writen to a column
+                % TODO include marker coordinate in filename
+                csvwrite(filename,squeeze(handles.cmosData(M(x,2),M(x,1),startp:endp-1)));
+            end
+            
+        end
+    end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% CONDITION SIGNALS
 %% Condition Signals Selection Change Callback
@@ -788,10 +887,14 @@ handles.apdC = [];  % variable for storing apd calculations
             % Update counter % progress bar
             counter = counter + 1;
             waitbar(counter/trackProg,g1,'Binning Data');
-            if bin_pop_state == 4
+            if bin_pop_state == 6
                 bin_size = 45;
-            elseif bin_pop_state == 3
+            elseif bin_pop_state == 5
                 bin_size = 15;
+            elseif bin_pop_state == 4
+                bin_size = 9;
+            elseif bin_pop_state == 3
+                bin_size = 7;
             elseif bin_pop_state == 2
                 bin_size = 5;
             else
@@ -1016,7 +1119,7 @@ handles.apdC = [];  % variable for storing apd calculations
         if check == 2
             gg=msgbox('Building  Activation Map...');
             % Activation map function
-            aMap(handles.cmosData,handles.a_start,handles.a_end,handles.Fs,handles.bg,handles.cmap,handles.filename);
+            aMap(handles.cmosData,handles.a_start,handles.a_end,handles.Fs,handles.bg,handles.cmap,handles.filename,handles.dir);
             close(gg)
         % FOR CONDUCTION VELOCITY
         elseif check == 3
