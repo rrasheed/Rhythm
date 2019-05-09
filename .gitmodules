@@ -1,0 +1,3 @@
+[submodule "stackin"]
+	path = stackin
+	url = https://github.com/RJ3/stackin.git
