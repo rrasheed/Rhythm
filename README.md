@@ -8,11 +8,12 @@ Rhythm is a MATLAB-based graphical user interface to display, condition, and ana
 * Ability to create movies and export individual signals
 
 # Requirements
-We recommend the latest release of 64-bit MATLAB on a 64-bit machine. We have tested this package on both windows and mac platforms. This code was originally created for a mac. While functionality is unchanged on windows machines, GUI display may be a bit irregular on MATLAB for windows.
-*MATLAB 9.5
-*Signal Processing Toolbox 8.1
-*Image Processing Toolbox 10.3
-*Statistics and Machine Learning Toolbox 11.4
+We recommend the latest release of 64-bit MATLAB on a 64-bit machine. We have tested this package on both windows and mac platforms. This code was originally created for a mac. While functionality is unchanged on windows machines, GUI display may be a bit irregular on MATLAB for windows.  
+
+*MATLAB 9.5  
+*Signal Processing Toolbox 8.1  
+*Image Processing Toolbox 10.3  
+*Statistics and Machine Learning Toolbox 11.4  
 
 # Contributions
 If you would like to contribute to this project, please contact Dr. Igor Efimov at igor@wustl.edu. If you find this code helpful, please reference our review paper describing proper analysis of optical mapping data found at http://www.ncbi.nlm.nih.gov/pubmed/22821993
