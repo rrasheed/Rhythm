@@ -526,7 +526,7 @@ handles.apdC = [];  % variable for storing apd calculations
         end
         I = J .* A + G .* (1 - A);
         image(I,'Parent',movie_scrn);
-        % Show current frame's timestamp at bottom right
+        % Show current frame's timestamp on STOP button
         currentTime = frame * 1/handles.Fs;
         set(stop_button,'string',num2str(currentTime))
         axis('image')
@@ -660,97 +660,102 @@ handles.apdC = [];  % variable for storing apd calculations
         hold off
     end
 
-%% Export movie to .avi file
+%% Export movie to .mp4 file
 %Construct a VideoWriter object and view its properties. Set the frame rate to 60 frames per second:
-    function expmov_button_callback(~,~)        
-        % Save the movie to the same directory as the cmos data
-        % Request the directory for saving the file
-        dir = uigetdir;
-        % If the cancel button is selected cancel the function
-        if dir == 0
-            return
-        end
-        % Request the desired name for the movie file
-        filename = inputdlg('Enter Filename:');
-        filename = char(filename);
-        % Check to make sure a value was entered
-        if isempty(filename)
-            error = 'A filename must be entered! Function cancelled.';
-            msgbox(error,'Incorrect Input','Error');
-            return
-        end
-        filename = char(filename);
-        % Create path to file
-        movname = [handles.dir,'/',filename,'.avi'];
-        % Create the figure to be filmed        
-        fig=figure('Name',filename,'NextPlot','replacechildren','NumberTitle','off',...
-            'Visible','off','OuterPosition',[170, 140, 556,715]);
-        % Start writing the video
-        vidObj = VideoWriter(movname,'Motion JPEG AVI');
-        open(vidObj);
-        movegui(fig,'center')
-        set(fig,'Visible','on')
-        axis tight
-        set(gca,'nextplot','replacechildren');
-        % Designate the step of based on the frequency
-        
-        % Creat pop up screen; the start time and end time are determined
-        % by the windowing of the signals on the Rhythm GUI interface
-        
-        % Grab start and stop time times and convert to index values by
-        % multiplying by frequency, add one to shift from zero
-        start = str2double(get(starttimesig_edit,'String'))*handles.Fs+1;   
-        fin = str2double(get(endtimesig_edit,'String'))*handles.Fs+1;
-        % Designate the resolution of the video: ex. 5 = every fifth frame
-        step = 5;
-        for i = start:step:fin
-            % Plot sweep bar on bottom subplot
-            subplot('Position',[0.05, 0.1, 0.9,0.15])
-            a = [handles.time(i) handles.time(i)];
-            %b = [min(handles.ecg) max(handles.ecg)];
-            squeeze1=squeeze(handles.cmosData(64,64,:));
-            b=[min(squeeze1) max(squeeze1)];
-            cla
-            plot(a,b,'r','LineWidth',1.5);hold on
-            % Plot ecg data on bottom subplot
-            subplot('Position',[0.05, 0.1, 0.9,0.15])
-            % Create a variable for the endtime index
-            endtime = round(handles.endtime*handles.Fs);
-            % Plot the desired
-            plot(handles.time(start:endtime),squeeze1(1:end-1));
-            % 
-%            axis([handles.time(start) round(handles.time(fin)) floor(min(squeeze1)) floor(max(squeeze1))])
-            % Set the xick mark to start from zero
-            xlabel('Time (sec)');hold on
-            % Image movie frames on the top subplot
-            subplot('Position',[0.05, 0.28, 0.9,0.68])
-            % Update image
-            G = handles.bgRGB;
-            Mframe = handles.cmosData(:,:,i);
-            if handles.normflag == 0
-                Mmax = handles.matrixMax;
-                Mmin = handles.minVisible;
-                numcol = size(jet,1);
-                J = ind2rgb(round((Mframe - Mmin) ./ (Mmax - Mmin) * (numcol - 1)), jet);
-                A = real2rgb(Mframe >= handles.minVisible, 'gray');
-            else
-                J = real2rgb(Mframe, 'jet');
-                A = real2rgb(Mframe >= handles.normalizeMinVisible, 'gray');
-            end
-            
-            I = J .* A + G .* (1 - A);
-            image(I);
-            axis off; hold off
-            F = getframe(fig);
-            writeVideo(vidObj,F);% Write each frame to the file.
-        end
-        close(fig);
-        close(vidObj); % Close the file.
+function expmov_button_callback(~,~)        
+    % Save the movie to the same directory as the cmos data
+    % Request the directory for saving the file
+    dir = uigetdir;
+    % If the cancel button is selected cancel the function
+    if dir == 0
+        return
     end
-% 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %% SIGNAL SCREENS
-% %% Start Time Editable Textbox for Signal Screens
+    % Request the desired name for the movie file
+    filename = inputdlg('Enter Filename:', 'Movie Filename', [1 60]);
+    filename = char(filename);
+    % Check to make sure a value was entered
+    if isempty(filename)
+        error = 'A filename must be entered! Function cancelled.';
+        msgbox(error,'Incorrect Input','Error');
+        return
+    end
+    filename = char(filename);
+    % Create path to file
+    movname = [handles.dir,'/',filename];
+    % Get dimensions of video
+    width = size(handles.cmosData(:,:,1), 1);
+    height = size(handles.cmosData(:,:,1), 2);
+    % Create the figure to be filmed        
+    fig=figure('Name',filename,'NextPlot','replacechildren','NumberTitle','off',...
+        'Visible','off','OuterPosition',[0, 0, width, height]);
+    % Start writing the video, format as a .mp4
+    vidObj = VideoWriter(movname,'Uncompressed AVI');
+    open(vidObj);
+    movegui(fig,'center')
+    set(fig,'Visible','on')
+    axis tight
+    set(gca,'nextplot','replacechildren');
+    % Designate the step of based on the frequency
+
+    % Creat pop up screen; the start time and end time are determined
+    % by the windowing of the signals on the Rhythm GUI interface
+
+    % Grab start and stop time times and convert to index values by
+    % multiplying by frequency, add one to shift from zero
+    start = str2double(get(starttimesig_edit,'String'))*handles.Fs+1;   
+    fin = str2double(get(endtimesig_edit,'String'))*handles.Fs+1;
+    % Designate the resolution of the video: ex. 5 = every fifth frame
+    step = 5;
+    for i = start:step:fin
+        % Plot sweep bar on bottom subplot
+%         subplot('Position',[0.05, 0.1, 0.9,0.15])
+%         a = [handles.time(i) handles.time(i)];
+        %b = [min(handles.ecg) max(handles.ecg)];
+%         squeeze1=squeeze(handles.cmosData(64,64,:));
+%         b=[min(squeeze1) max(squeeze1)];
+        cla
+%         plot(a,b,'r','LineWidth',1.5);hold on
+        % Plot ecg data on bottom subplot
+%         subplot('Position',[0.05, 0.1, 0.9,0.15])
+        % Create a variable for the endtime index
+%         endtime = round(handles.endtime*handles.Fs);
+        % Plot the desired
+%         plot(handles.time(start:endtime),squeeze1(1:end-1));
+        % 
+%            axis([handles.time(start) round(handles.time(fin)) floor(min(squeeze1)) floor(max(squeeze1))])
+        % Set the xick mark to start from zero
+%         xlabel('Time (sec)');hold on
+        % Image movie frames on the top subplot
+%         subplot('Position',[0.05, 0.28, 0.9,0.68])
+        subplot('Position',[0, 0, 1, 1])
+        
+        % Update image
+        G = handles.bgRGB;
+        Mframe = handles.cmosData(:,:,i);
+        if handles.normflag == 0
+            Mmax = handles.matrixMax;
+            Mmin = handles.minVisible;
+            numcol = size(jet,1);
+            J = ind2rgb(round((Mframe - Mmin) ./ (Mmax - Mmin) * (numcol - 1)), jet);
+            A = real2rgb(Mframe >= handles.minVisible, 'gray');
+        else
+            J = real2rgb(Mframe, 'jet');
+            A = real2rgb(Mframe >= handles.normalizeMinVisible, 'gray');
+        end
+
+        I = J .* A + G .* (1 - A);
+        imshow(I, 'InitialMagnification', 100);
+        axis off; hold off
+        F = getframe(fig);
+        writeVideo(vidObj,F);% Write each frame to the file.
+    end
+    close(fig);
+    close(vidObj); % Close the file.
+end
+
+
+%% SIGNAL SCREENS
+% Start Time Editable Textbox for Signal Screens
     function starttimesig_edit_callback(source,~)
         %get the val01 (lower limit) and val02 (upper limit) plot values
         val01 = str2double(get(source,'String'));
