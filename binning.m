@@ -19,8 +19,10 @@ function [data] = binning(data,N)
 data(data==0) = NaN;
 
 avePattern = ones(N,N);
-for i = 1:size(data,3)
+for i = 1:size(data,3)  % for each frame of the data
+    % get the N*N cmos data for the frame
     temp = data(:,:,i);
+    % replace temp with 
     temp = 1/N/N*conv2(temp,avePattern,'same');
     data(:,:,i) = temp;
 end
