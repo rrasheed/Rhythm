@@ -322,7 +322,7 @@ handles.apdC = [];  % variable for storing apd calculations
                 handles.Fs = fps;
                 handles.bg = mean(-1.*cmosData(:,:,1:4),3); 
                 andor=1; % variable to detect if andor data is being used
-            elseif exist([filename(1:end-3),'tif'],'file') || exist([filename(1:end-3),'tiff'],'file')
+            elseif exist([filename(1:end-3),'tif'],'file') || exist([filename(1:end-4),'tiff'],'file') || exist([filename(1:end-6),'pcoraw'],'file')
                 [Data, fps, ~,~]=tifopen(filename);
                 if(handles.dataType == 'v')
                     cmosData = -1.*double(Data); % For Voltage
@@ -435,13 +435,15 @@ handles.apdC = [];  % variable for storing apd calculations
             search_nameNew = [dir_name,'/*.gsh'];
             search_nameAndor = [dir_name,'/*.sif']; %adding Andor SIF support
             search_nameTif = [dir_name,'/*.tif']; %adding TIF support
+            search_namePco = [dir_name,'/*.pcoraw']; %adding PCO support
             search_nameMAT = [dir_name,'/*.mat']; %adding MATLAB raw data, already converted
             files = struct2cell(dir(search_name));
             filesNew = struct2cell(dir(search_nameNew));
             filesAndor = struct2cell(dir(search_nameAndor));
             filesTif = struct2cell(dir(search_nameTif));
+            filesPco = struct2cell(dir(search_namePco));
             filesMAT = struct2cell(dir(search_nameMAT));
-            handles.file_list = [files(1,:)'; filesNew(1,:)';filesAndor(1,:)';filesTif(1,:)';filesMAT(1,:)'];
+            handles.file_list = [files(1,:)'; filesNew(1,:)';filesAndor(1,:)';filesTif(1,:)';filesPco(1,:)';filesMAT(1,:)'];
             set(filelist,'String',handles.file_list)
             handles.filename = char(handles.file_list(1));
             % enable the refresh directory and load file buttons
