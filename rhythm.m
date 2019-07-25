@@ -289,6 +289,10 @@ handles.apdC = [];  % variable for storing apd calculations
 
 %% Load selected files in filelist
     function loadfile_callback(~,~)
+%         % Create variables for tracking file load progress
+%         barLoadProg = 3;
+%         barLoad_i = 0;
+%         barLoad = waitbar(barLoad_i, 'Loading video');
         if isempty(handles.filename)
             msgbox('Warning: No data selected','Title','warn')
         else
@@ -304,6 +308,9 @@ handles.apdC = [];  % variable for storing apd calculations
             % Check for *.mat file, if none convert
             filename = [handles.dir,'/',handles.filename];
             
+%             % Update counter % progress bar
+%             barLoad_i = barLoad_i + 1;
+%             waitbar(barLoad_i/barLoadProg, barLoad, 'Loading video.');
             
             % Check for existence of already converted *.mat file
             if exist([filename(1:end-3),'mat'],'file')
@@ -344,6 +351,10 @@ handles.apdC = [];  % variable for storing apd calculations
                 Data = load([filename(1:end-3),'mat']);
             end
             
+%             % Update counter % progress bar
+%             barLoad_i = barLoad_i + 1;
+%             waitbar(barLoad_i/barLoadProg, barLoad,'Loading video..');
+            
             % Check for dual camera data
             if isfield(Data,'cmosData2')
                 %pop-up window for camera choice
@@ -373,6 +384,10 @@ handles.apdC = [];  % variable for storing apd calculations
                 % Save out frequency
                 handles.Fs = double(Data.frequency);
             end
+            
+%             % Update counter % progress bar
+%             barLoad_i = barLoad_i + 1;
+%             waitbar(barLoad_i/barLoadProg, barLoad,'Loading video...');
             
             % Save a variable to preserve  the raw cmos data
             handles.cmosRawData = handles.cmosData;
@@ -416,6 +431,9 @@ handles.apdC = [];  % variable for storing apd calculations
             % Initialize movie slider to the first frame
             set(movie_slider,'Value',0)
             drawFrame(1);
+            
+            % Delete the progress bar 
+%             delete(barLoad)
             % Enable signal processing and analysis tools
             set([removeBG_button,bg_thresh_edit,bg_thresh_label,perc_ex_edit,...
                 perc_ex_label,bin_button,filt_button,removeDrift_button,norm_button,...
@@ -1178,7 +1196,7 @@ end
         elseif check == 4
             gg=msgbox('Creating Global APD Map...');
             handles.percentAPD = str2double(get(percentapd_edit,'String'));
-            apdMap(handles.cmosData,handles.a_start,handles.a_end,handles.Fs,handles.percentAPD,handles.cmap);
+            apdMap(handles.cmosData,handles.a_start,handles.a_end,handles.Fs,handles.percentAPD,handles.cmap, handles.filename,handles.dir);
             close(gg)
         % FOR PHASE MAP CALCULATION
         elseif check == 5

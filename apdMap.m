@@ -1,4 +1,4 @@
-function [apdMap] = apdMap(data,start,endp,Fs,percent,cmap)
+function [apdMap] = apdMap(data,start,endp,Fs,percent,cmap,filename,dir)
 %% the function apdMap creates a visual representation of the action potential duration 
 %
 % INPUTS
@@ -100,4 +100,27 @@ caxis([APD_min APD_max])
 figure('Name','Histogram of APD')
 hist(reshape(apdMap,[],1),floor(APD_max-APD_min))
 %xlim([APD_min APD_max])
+
+
+
+% User prompt for input to create csv
+prompt1 = {'Save APD map?'};
+dlg_title1 = 'Save APD map';
+num_lines1 = [1 60];
+file = strtok(filename,'.');    % Get filename without extension 
+def1 = {strcat(dir,'/APDMaps/APD-',file,'.csv')};
+answer = inputdlg(prompt1,dlg_title1,num_lines1,def1);
+% process user inputs
+if isempty(answer)      % cancel save if user clicks "cancel"
+    return
+end
+filename = answer{1};
+
+% create the APDMaps folder if it doesn't exist already.
+newSubFolder = strcat(dir,'/APDMaps/');
+if ~exist(newSubFolder, 'dir')
+  mkdir(newSubFolder);
+end
+csvwrite(filename,apdMap);
+
 end
